@@ -22,7 +22,7 @@ Branch: `cursor/asbs-website-completion-0d43`. Production was not modified.
 | SEO basics | Partial | Titles, descriptions, canonical URLs, sitemap, robots, and organization/service structured data. No Search Console token and no Analytics id were available. No LinkedIn URL was on the existing site, so none was added. |
 | Legal pages | Partial | October 13 policy text kept. October 26 addenda are drafts for legal review. |
 | Public staging URL | Blocked on a Render sign-in | `render.yaml` and `docs/STAGING.md`. No host credentials were available, so nothing was deployed. Production and GitHub Pages were not changed. |
-| Automated tests | Complete | 18 tests, 0 failures, Node 22. See `docs/TESTING_REPORT.md`. |
+| Automated tests | Complete | 21 tests, 0 failures, Node 22. See `docs/TESTING_REPORT.md`. |
 | Friends-and-family URL | Not ready | The owner still has to apply the Render blueprint. Google Calendar stays disconnected until the OAuth steps in `docs/GOOGLE_CALENDAR_SETUP.md`. |
 
 Positioning line on the site: People. Process. Solutions. Results.
