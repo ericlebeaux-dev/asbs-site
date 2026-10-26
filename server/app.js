@@ -4,6 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import { clearCookie, passwordsMatch, readCookie, sessionCookie, signSession, verifySession } from "./auth.js";
 import { calendarFromEnv } from "./calendar.js";
+import { mailerFromEnv } from "./mail.js";
 import { PACKAGES, PRICING_STATUS } from "./packages.js";
 import { HORIZON_DAYS, consultationType, generateSlots } from "./slots.js";
 import { createStore } from "./store.js";
@@ -14,6 +15,7 @@ import {
   validateDocument,
   validateInquiry,
   validateIntake,
+  validateQuote,
   validateVendor,
 } from "./validate.js";
 
@@ -50,9 +52,10 @@ export function createApp(options = {}) {
   const config = loadConfig(options);
   const store = options.store || createStore(config.dataDir);
   const calendar = options.calendar || calendarFromEnv(config.env);
+  const mailer = options.mailer || mailerFromEnv(config.env);
   const limits = new Map();
   const server = http.createServer((req, res) => {
-    handle(req, res, { config, store, calendar, limits }).catch((error) => {
+    handle(req, res, { config, store, calendar, mailer, limits }).catch((error) => {
       sendJson(res, error.status || 500, {
         message: error.status ? error.message : "Something went wrong. Nothing was saved.",
         fields: error.fields || undefined,
@@ -73,14 +76,14 @@ async function handle(req, res, ctx) {
 }
 
 async function routeApi(req, res, url, ctx) {
-  const { config, store, calendar } = ctx;
+  const { config, store, calendar, mailer } = ctx;
   if (!allowRate(ctx, req, `${req.method} ${url.pathname}`)) {
     sendJson(res, 429, { message: "Too many requests. Wait a few minutes and try again." });
     return;
   }
 
   if (req.method === "GET" && url.pathname === "/api/health") {
-    sendJson(res, 200, health(config, calendar));
+    sendJson(res, 200, health(config, calendar, mailer));
     return;
   }
   if (req.method === "GET" && url.pathname === "/api/packages") {
@@ -128,13 +131,29 @@ async function routeApi(req, res, url, ctx) {
     const fields = validateIntake(body);
     const followUp = new Date(config.now().getTime() + 24 * 60 * 60 * 1000).toISOString();
     const saved = await store.createCustomerLead(fields, { stage: "new_lead", followUp });
+    const mail = await confirm(mailer, {
+      kind: "intake",
+      name: fields.name,
+      email: fields.email,
+      phone: fields.phone,
+      organization: fields.organization,
+      summaryLines: [
+        `Name: ${fields.name}`,
+        `Business: ${fields.organization}`,
+        `Email: ${fields.email}`,
+        `Phone: ${fields.phone}`,
+        `Interest: ${fields.serviceInterest}`,
+      ],
+    });
+    await remember(store, config, "intake");
     sendJson(res, saved.duplicate ? 200 : 201, {
       leadId: saved.lead.id,
       duplicate: saved.duplicate,
       stage: saved.lead.stage,
+      email: { sent: mail.sent === true },
       message: saved.duplicate
-        ? "We already had a record for this email, so we updated it instead of creating a second one."
-        : "Your intake was received. It does not hire ASBS or authorize any submission on your behalf.",
+        ? receipt("We already had a record for this email, so we updated it instead of creating a second one.", mail)
+        : receipt("Your intake was received. It does not hire ASBS or authorize any submission on your behalf.", mail),
     });
     return;
   }
@@ -148,11 +167,27 @@ async function routeApi(req, res, url, ctx) {
       const stored = await store.saveDocument({ ...document, leadId: saved.lead.id }, document.bytes);
       documentId = stored.id;
     }
+    const mail = await confirm(mailer, {
+      kind: "vendor",
+      name: fields.name,
+      email: fields.email,
+      phone: fields.phone,
+      organization: fields.legalName,
+      summaryLines: [
+        `Business: ${fields.legalName}`,
+        `Contact: ${fields.name}`,
+        `Email: ${fields.email}`,
+        `Phone: ${fields.phone || ""}`,
+        `Services: ${fields.services}`,
+      ],
+    });
+    await remember(store, config, "vendor");
     sendJson(res, saved.duplicate ? 200 : 201, {
       leadId: saved.lead.id,
       duplicate: saved.duplicate,
       documentId,
-      message: "Your vendor registration was saved privately. It does not guarantee teaming, subcontracting, or a contract award.",
+      email: { sent: mail.sent === true },
+      message: receipt("Your vendor registration was saved privately. It does not guarantee teaming, subcontracting, or a contract award.", mail),
     });
     return;
   }
@@ -164,10 +199,61 @@ async function routeApi(req, res, url, ctx) {
       { stage: "new_lead", followUp: new Date(config.now().getTime() + 24 * 60 * 60 * 1000).toISOString() },
     );
     await store.updateLead(saved.lead.id, {}, `Website inquiry (${fields.topic}): ${fields.message}`);
+    const mail = await confirm(mailer, {
+      kind: "contact",
+      name: fields.name,
+      email: fields.email,
+      phone: fields.phone,
+      organization: fields.organization,
+      summaryLines: [`Topic: ${fields.topic}`, `Message: ${fields.message}`],
+    });
+    await remember(store, config, "contact");
     sendJson(res, 201, {
       leadId: saved.lead.id,
       duplicate: saved.duplicate,
-      message: "Your message was received. ASBS aims to reply within one to two business days. This form does not send a separate confirmation email.",
+      email: { sent: mail.sent === true },
+      message: receipt("Your message was received.", mail),
+    });
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/api/quotes") {
+    const body = await readJson(req);
+    const fields = validateQuote(body);
+    const summary = [
+      `Buyer type: ${fields.buyerType || "Not specified"}`,
+      `Services: ${fields.services.join(", ") || "Not specified"}`,
+      `Quantity or scope: ${fields.quantity || "Not specified"}`,
+      `Timeline: ${fields.timeline || "Not specified"}`,
+      `Details: ${fields.details || "Not specified"}`,
+    ];
+    const saved = await store.createCustomerLead(
+      {
+        name: fields.name,
+        email: fields.email,
+        phone: fields.phone || "",
+        organization: fields.organization || fields.name,
+        serviceInterest: "supplies",
+        leadSource: "website",
+        consent: true,
+        notes: summary.join("\n"),
+      },
+      { stage: "new_lead", followUp: new Date(config.now().getTime() + 24 * 60 * 60 * 1000).toISOString() },
+    );
+    await store.updateLead(saved.lead.id, {}, `Quote request:\n${summary.join("\n")}`);
+    const mail = await confirm(mailer, {
+      kind: "quote",
+      name: fields.name,
+      email: fields.email,
+      phone: fields.phone,
+      organization: fields.organization,
+      summaryLines: [`Name: ${fields.name}`, `Email: ${fields.email}`, ...summary],
+    });
+    await remember(store, config, "quote");
+    sendJson(res, saved.duplicate ? 200 : 201, {
+      leadId: saved.lead.id,
+      duplicate: saved.duplicate,
+      email: { sent: mail.sent === true },
+      message: receipt("Your quote request was received.", mail),
     });
     return;
   }
@@ -175,6 +261,24 @@ async function routeApi(req, res, url, ctx) {
     const body = await readJson(req);
     const fields = validateBooking(body);
     const result = await book(config, store, calendar, fields);
+    const mail = await confirm(mailer, {
+      kind: "booking",
+      name: fields.name,
+      email: fields.email,
+      phone: fields.phone,
+      organization: fields.organization,
+      summaryLines: [
+        `Consultation: ${result.typeLabel}`,
+        `When: ${result.when}`,
+        `How we will meet: ${fields.meetingMode === "phone" ? "Phone" : "Google Meet"}`,
+        `Cancellation code: ${result.cancelToken}`,
+      ],
+    });
+    await remember(store, config, "booking");
+    result.email = { sent: mail.sent === true };
+    if (mail.sent) {
+      result.instructions = "A confirmation email was sent to you. Keep the cancellation code. Use it on this page to cancel or choose a different open time. To reach a person, call (281) 954-5167.";
+    }
     sendJson(res, 201, result);
     return;
   }
@@ -186,13 +290,38 @@ async function routeApi(req, res, url, ctx) {
   const cancel = url.pathname.match(/^\/api\/bookings\/([0-9a-f-]{36})\/cancel$/);
   if (req.method === "POST" && cancel) {
     const body = await readJson(req);
-    sendJson(res, 200, await cancelBooking(config, store, calendar, cancel[1], body.token));
+    const existing = store.findBooking(cancel[1]);
+    const result = await cancelBooking(config, store, calendar, cancel[1], body.token);
+    if (existing) {
+      const mail = await confirm(mailer, {
+        kind: "cancel",
+        name: existing.name,
+        email: existing.email,
+        phone: existing.phone,
+        organization: existing.organization,
+        summaryLines: [`Consultation: ${existing.typeLabel || existing.type}`, `When: ${formatZoned(new Date(existing.start))}`],
+      });
+      await remember(store, config, "cancel");
+      result.email = { sent: mail.sent === true };
+    }
+    sendJson(res, 200, result);
     return;
   }
   const move = url.pathname.match(/^\/api\/bookings\/([0-9a-f-]{36})\/reschedule$/);
   if (req.method === "POST" && move) {
     const body = await readJson(req);
-    sendJson(res, 200, await reschedule(config, store, calendar, move[1], body));
+    const result = await reschedule(config, store, calendar, move[1], body);
+    const mail = await confirm(mailer, {
+      kind: "reschedule",
+      name: result.name,
+      email: result.email || store.findBooking(move[1])?.email,
+      phone: store.findBooking(move[1])?.phone,
+      organization: store.findBooking(move[1])?.organization,
+      summaryLines: [`Consultation: ${result.typeLabel || result.type}`, `When: ${result.when}`],
+    });
+    await remember(store, config, "reschedule");
+    result.email = { sent: mail.sent === true };
+    sendJson(res, 200, result);
     return;
   }
   if (req.method === "POST" && url.pathname === "/api/events") {
@@ -239,11 +368,11 @@ async function routeApi(req, res, url, ctx) {
     return;
   }
   if (req.method === "GET" && url.pathname === "/api/dashboard") {
-    sendJson(res, 200, dashboard(config, store, calendar));
+    sendJson(res, 200, dashboard(config, store, calendar, spanDays(url), mailer));
     return;
   }
   if (req.method === "GET" && url.pathname === "/api/reports/weekly") {
-    sendJson(res, 200, weekly(config, store, calendar));
+    sendJson(res, 200, weekly(config, store, calendar, spanDays(url), mailer));
     return;
   }
   const leadPatch = url.pathname.match(/^\/api\/leads\/([0-9a-f-]{36})$/);
@@ -282,7 +411,7 @@ async function routeApi(req, res, url, ctx) {
   sendJson(res, 404, { message: "That address was not found." });
 }
 
-function health(config, calendar) {
+function health(config, calendar, mailer) {
   return {
     ok: true,
     environment: config.environment,
@@ -293,6 +422,11 @@ function health(config, calendar) {
       reason: calendar.configured ? null : calendar.reason,
     },
     dashboard: { configured: Boolean(config.dashboardPassword) },
+    mail: {
+      configured: mailer?.configured === true,
+      from: "americanstandardsolutions@gmail.com",
+      transport: "gmail_api",
+    },
     payments: {
       livePackageCheckout: false,
       pricingStatus: PRICING_STATUS,
@@ -454,7 +588,7 @@ async function book(config, store, calendar, fields) {
           ? "The appointment was added to the connected Google Calendar. No email invitation was sent."
           : "Saved in the ASBS scheduling system. It is not on the owner's Google Calendar yet because that connection is not authorized.",
       },
-      instructions: "Keep the cancellation code. Use it on this page to cancel or choose a different open time. ASBS does not email a confirmation unless the owner later approves email notices. To reach a person, call (281) 954-5167.",
+      instructions: "Keep the cancellation code. Use it on this page to cancel or choose a different open time. A confirmation email is sent to you when mailbox sending is connected. To reach a person, call (281) 954-5167.",
     };
   });
 }
@@ -560,7 +694,7 @@ function customerView(booking) {
       connected: Boolean(booking.calendarEventId),
       eventCreated: Boolean(booking.calendarEventId),
     },
-    instructions: "To cancel or reschedule, use the confirmation code from this booking. Call (281) 954-5167 if you lose it. No email reminder is sent.",
+    instructions: "To cancel or reschedule, use the confirmation code from this booking. Call (281) 954-5167 if you lose it. A confirmation email is sent when mailbox sending is connected.",
   };
 }
 
@@ -622,9 +756,48 @@ async function reschedule(config, store, calendar, id, body) {
   });
 }
 
-function dashboard(config, store, calendar) {
+async function confirm(mailer, submission) {
+  try {
+    if (!mailer || typeof mailer.notify !== "function") {
+      return { sent: false, customerSent: false, ownerSent: false, reason: "not_configured" };
+    }
+    const result = await mailer.notify(submission);
+    return result || { sent: false, customerSent: false, ownerSent: false, reason: "send_failed" };
+  } catch {
+    return { sent: false, customerSent: false, ownerSent: false, reason: "send_failed" };
+  }
+}
+
+function receipt(base, mail) {
+  const extra = mail?.sent
+    ? " A confirmation email was sent to you."
+    : " Someone will reach out promptly.";
+  return `${base}${extra}`;
+}
+
+async function remember(store, config, kind) {
+  try {
+    await store.addEvent({
+      id: crypto.randomUUID(),
+      name: "submission",
+      path: String(kind || "submission").slice(0, 160),
+      viewport: "unknown",
+      meta: { id: String(kind || "submission").slice(0, 80) },
+      at: config.now().toISOString(),
+    });
+  } catch {
+    // A metrics write must not undo a saved form.
+  }
+}
+
+function spanDays(url) {
+  const days = Number(url.searchParams.get("days"));
+  return days === 30 || days === 90 ? days : 7;
+}
+
+function dashboard(config, store, calendar, days = 7, mailer) {
   const snap = store.snapshot();
-  const report = weekly(config, store, calendar);
+  const report = weekly(config, store, calendar, days, mailer);
   return {
     generatedAt: config.now().toISOString(),
     environment: config.environment,
@@ -633,7 +806,9 @@ function dashboard(config, store, calendar) {
       googleAnalytics: "not_connected",
       stripe: "not_synced",
       googleCalendar: calendar.configured ? "connected" : "not_connected",
-      revenue: "Owner-attested payments only. Unverified package prices are not revenue.",
+      mail: mailer?.configured ? "gmail_api" : "not_configured",
+      revenue: "Owner-attested payments only. Package prices are not revenue while checkout is off.",
+      persistence: "Counts live on this server's disk. The free Render plan erases them on restart. They are not in a database.",
     },
     report,
     leads: snap.leads,
@@ -642,11 +817,14 @@ function dashboard(config, store, calendar) {
   };
 }
 
-function weekly(config, store, calendar) {
+function weekly(config, store, calendar, days = 7, mailer) {
+  const span = days === 30 || days === 90 ? days : 7;
   const snap = store.snapshot();
   const now = config.now();
-  const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
-  const inWeek = (value) => Date.parse(value || "") >= weekAgo;
+  const today = zonedToday(now);
+  const series = dailySeries(snap, today, span);
+  const windowStart = series.startMs;
+  const inWeek = (value) => Date.parse(value || "") >= windowStart;
   const leads = snap.leads;
   const newLeads = leads.filter((lead) => inWeek(lead.createdAt));
   const bookings = snap.bookings.filter((booking) => booking.status === "scheduled");
@@ -657,16 +835,22 @@ function weekly(config, store, calendar) {
   const events = snap.events.filter((event) => inWeek(event.at));
   const byName = countBy(events, (event) => event.name);
   const byViewport = countBy(events, (event) => event.viewport);
-  const actions = recommendedActions({ leads, calendar, events, config });
+  const actions = recommendedActions({ leads, calendar, events, config, mailer });
   return {
-    periodStart: new Date(weekAgo).toISOString(),
+    spanDays: span,
+    periodStart: new Date(windowStart).toISOString(),
     periodEnd: now.toISOString(),
     generatedAt: now.toISOString(),
+    persistence: "These counts are on this server's disk. A free Render restart erases them. They do not include the public GitHub Pages site.",
+    trends: series.rows,
     website: {
       pageViews: byName.page_view || 0,
       ctaClicks: byName.cta_click || 0,
+      submissions: byName.submission || 0,
       inquiries: leads.filter((lead) => lead.role === "customer" && inWeek(lead.createdAt)).length,
       viewport: byViewport,
+      topPages: pageTotals(events),
+      submissionsByKind: submissionTotals(events),
       note: "Counts are first-party events received by this server. Google Analytics is not connected, so this is not total public-site traffic.",
     },
     pipeline: {
@@ -692,14 +876,75 @@ function weekly(config, store, calendar) {
       recurringRevenue: null,
       note: collectedCents
         ? "Collected total includes only payments the owner marked as actually received. Stripe is not synced."
-        : "No verified collected revenue is stored. Package prices are proposals, not revenue. Stripe is not synced.",
+        : "No verified collected revenue is stored. Checkout is off, so package prices are not revenue. Stripe is not synced.",
     },
     actions,
   };
 }
 
-function recommendedActions({ leads, calendar, events, config }) {
+function chicagoKey(date) {
+  const parts = zonedParts(date);
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+}
+
+function ymdKey(parts) {
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+}
+
+function dailySeries(snap, today, span) {
+  const rows = [];
+  for (let offset = span - 1; offset >= 0; offset -= 1) {
+    rows.push({
+      date: ymdKey(addDaysYmd(today.year, today.month, today.day, -offset)),
+      pageViews: 0,
+      submissions: 0,
+      bookings: 0,
+    });
+  }
+  const index = new Map(rows.map((row, position) => [row.date, position]));
+  const first = addDaysYmd(today.year, today.month, today.day, -(span - 1));
+  const startMs = zonedTimeToUtc(first.year, first.month, first.day, 0, 0).getTime();
+  for (const event of snap.events) {
+    const at = Date.parse(event.at || "");
+    if (!Number.isFinite(at) || at < startMs) continue;
+    const position = index.get(chicagoKey(new Date(at)));
+    if (position == null) continue;
+    if (event.name === "page_view") rows[position].pageViews += 1;
+    if (event.name === "submission") rows[position].submissions += 1;
+  }
+  for (const booking of snap.bookings) {
+    const at = Date.parse(booking.createdAt || "");
+    if (!Number.isFinite(at) || at < startMs) continue;
+    const position = index.get(chicagoKey(new Date(at)));
+    if (position == null) continue;
+    rows[position].bookings += 1;
+  }
+  return { rows, startMs };
+}
+
+function pageTotals(events) {
+  const counts = countBy(
+    events.filter((event) => event.name === "page_view"),
+    (event) => event.path || "/",
+  );
+  return Object.entries(counts)
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, 8)
+    .map(([page, count]) => ({ path: page, count }));
+}
+
+function submissionTotals(events) {
+  return countBy(
+    events.filter((event) => event.name === "submission"),
+    (event) => event.path || "unknown",
+  );
+}
+
+function recommendedActions({ leads, calendar, events, config, mailer }) {
   const actions = [];
+  if (mailer && mailer.configured === false) {
+    actions.push("Add the Gmail refresh token for americanstandardsolutions@gmail.com so each submission can send a confirmation. Leave the calendar token unchanged.");
+  }
   if (!calendar.configured) {
     actions.push("Connect Google Calendar OAuth on the staging server so new bookings are checked against the owner's calendar and written there.");
   }

@@ -19,13 +19,14 @@ function disconnectedCalendar() {
   };
 }
 
-async function start({ env = {}, calendar = disconnectedCalendar(), password = "test-dashboard-password" } = {}) {
+async function start({ env = {}, calendar = disconnectedCalendar(), password = "test-dashboard-password", mailer } = {}) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "asbs-"));
   const app = createApp({
     dataDir,
     rootDir: path.resolve("."),
     now: () => new Date(NOW),
     calendar,
+    ...(mailer ? { mailer } : {}),
     env: {
       ASBS_ENV: "staging",
       ASBS_DASHBOARD_PASSWORD: password,
@@ -99,6 +100,9 @@ test("health, packages, and static protections", async () => {
     assert.equal(health.data.payments.pricingStatus, "approved");
     assert.equal(health.data.payments.livePackageCheckout, false);
     assert.equal(health.data.bookingHorizonDays, 365);
+    assert.equal(health.data.mail.configured, false);
+    assert.equal(health.data.mail.from, "americanstandardsolutions@gmail.com");
+    assert.equal(health.data.mail.transport, "gmail_api");
 
     const home = await fetch(ctx.base + "/");
     assert.equal(home.status, 200);
@@ -285,6 +289,77 @@ test("vendor registration stores a private document the public site cannot read"
       payment: { amountCents: 100, attestation: "maybe" },
     }, { cookie });
     assert.equal(payment.status, 400);
+  } finally {
+    await ctx.stop();
+  }
+});
+
+test("a quote is saved when confirmation email throws", async () => {
+  const ctx = await start({
+    mailer: {
+      configured: true,
+      async notify() {
+        throw new Error("mailbox unavailable");
+      },
+    },
+  });
+  try {
+    const quote = await api(ctx.base, "POST", "/api/quotes", {
+      name: "Test Customer",
+      organization: "Example Consulting Co",
+      email: "quote.customer@example.com",
+      phone: "",
+      buyer_type: "Government",
+      services: ["Office Supplies (424120)"],
+      quantity_scope: "One case of paper",
+      timeline: "November",
+      details: "Need a quote for copy paper.",
+      consent: true,
+      company_url: "",
+      _honey: "",
+    });
+    assert.equal(quote.status, 201);
+    assert.equal(quote.data.email.sent, false);
+    assert.match(quote.data.message, /quote request was received/i);
+    assert.match(quote.data.message, /Someone will reach out promptly/);
+    assert.doesNotMatch(quote.data.message, /confirmation email was sent/i);
+
+    const refused = await api(ctx.base, "POST", "/api/quotes", {
+      name: "Test Customer",
+      email: "other.quote@example.com",
+      consent: false,
+    });
+    assert.equal(refused.status, 400);
+  } finally {
+    await ctx.stop();
+  }
+});
+
+test("dashboard trends follow the selected Central Time range", async () => {
+  const ctx = await start();
+  try {
+    const viewed = await api(ctx.base, "POST", "/api/events", {
+      name: "page_view",
+      path: "/index.html",
+      viewport: "desktop",
+    });
+    assert.equal(viewed.status, 204);
+    const login = await api(ctx.base, "POST", "/api/auth/login", { password: "test-dashboard-password" });
+    const cookie = login.headers.get("set-cookie").split(";")[0];
+    const dash = await api(ctx.base, "GET", "/api/dashboard?days=30", null, { cookie });
+    assert.equal(dash.status, 200);
+    assert.equal(dash.data.report.spanDays, 30);
+    assert.equal(dash.data.report.trends.length, 30);
+    assert.equal(dash.data.report.trends.at(-1).date, "2026-10-26");
+    assert.equal(dash.data.report.trends.at(-1).pageViews, 1);
+    assert.equal(dash.data.report.trends[0].pageViews, 0);
+    assert.equal(dash.data.report.website.topPages[0].path, "/index.html");
+    assert.match(dash.data.report.persistence, /restart/i);
+    const fallback = await api(ctx.base, "GET", "/api/dashboard?days=14", null, { cookie });
+    assert.equal(fallback.data.report.spanDays, 7);
+    assert.equal(fallback.data.report.trends.length, 7);
+    const quarter = await api(ctx.base, "GET", "/api/reports/weekly?days=90", null, { cookie });
+    assert.equal(quarter.data.trends.length, 90);
   } finally {
     await ctx.stop();
   }

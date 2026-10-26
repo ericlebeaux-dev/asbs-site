@@ -33,4 +33,5 @@ services:
       # Add these later in the Render Environment tab. Leave them out of git.
       # GOOGLE_CLIENT_ID
       # GOOGLE_CLIENT_SECRET
-      # GOOGLE_REFRESH_TOKEN
+      # GOOGLE_REFRESH_TOKEN is the calendar owner's token. Do not replace it.
+      # GOOGLE_GMAIL_REFRESH_TOKEN is a separate token for americanstandardsolutions@gmail.com.

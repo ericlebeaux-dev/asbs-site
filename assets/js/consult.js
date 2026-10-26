@@ -162,7 +162,10 @@
       if (!health.calendar || !health.calendar.connected) {
         note.textContent = "Google Calendar is not connected on this server. A booking is saved here and blocked against other bookings on this server, but it is not written to the owner's Google Calendar until the owner connects it.";
       } else {
-        note.textContent = "Google Calendar is connected. Open times exclude conflicts on that calendar, and a successful booking is added there without emailing you.";
+        var mailNote = health.mail && health.mail.configured
+          ? " A confirmation email is sent from American Standard Business Solutions."
+          : " A confirmation email is sent once mailbox sending is connected.";
+        note.textContent = "Google Calendar is connected. Open times exclude conflicts on that calendar, and a successful booking is added there. Google does not send a calendar invitation." + mailNote;
       }
     });
 

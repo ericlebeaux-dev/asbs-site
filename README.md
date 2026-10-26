@@ -16,10 +16,12 @@ Open <http://127.0.0.1:8787/>. The server listens on `127.0.0.1` unless `ASBS_HO
 
 `npm test` runs the Node test suite. It does not call Google and it does not send email.
 
+Confirmation email is sent only when `GOOGLE_GMAIL_REFRESH_TOKEN` is set on the server. That token is separate from the calendar refresh token. See `docs/EMAIL_SETUP.md`. A failed send does not undo a saved form.
+
 ## What is intentionally off
 
 - Consulting package checkout. The five package prices are approved. Online checkout stays off. Paid work starts only after a written agreement.
-- Customer email invitations. Calendar events, when credentials exist, are created with `sendUpdates=none` and without attendees.
+- Google Calendar invitations. Calendar events, when credentials exist, are created with `sendUpdates=none` and without attendees. The site's own confirmation email is a separate Gmail send and stays off until `GOOGLE_GMAIL_REFRESH_TOKEN` is set.
 - Google Analytics, until `ASBS_GA_MEASUREMENT_ID` is a real `G-` id in `assets/js/config.js`.
 - Writing to Google Calendar, until the owner sets the OAuth variables in `.env.example` on the server.
 

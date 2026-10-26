@@ -108,10 +108,40 @@
     });
   }
 
+  function watchQuote() {
+    var form = document.getElementById("quoteForm");
+    if (!form) return;
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      var alert = document.getElementById("quoteAlert");
+      window.ASBS.showMessage(alert, "");
+      var body = window.ASBS.formData(form);
+      body.consent = body.consent === true;
+      var button = form.querySelector("[type=submit]");
+      button.disabled = true;
+      try {
+        var result = await window.ASBS.apiFetch("/api/quotes", { method: "POST", body: body });
+        form.reset();
+        window.ASBS.showMessage(alert, result.message, "ok");
+      } catch (error) {
+        if (!error.status || error.status === 404) {
+          button.disabled = false;
+          form.submit();
+          return;
+        }
+        window.ASBS.showMessage(alert, error.message || "The quote request was not saved.", "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     watchIntake();
     watchVendor();
     watchContact();
+    watchQuote();
     document.addEventListener("asbs:offline", function () {
       var alert = document.getElementById("formAlert");
       if (alert && !document.getElementById("bookingForm")) {

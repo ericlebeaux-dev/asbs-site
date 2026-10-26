@@ -193,6 +193,37 @@ export function validateVendor(body) {
   };
 }
 
+export function validateQuote(body) {
+  assertNoSensitiveKeys(body);
+  rejectHoneypot(body);
+  if (body && typeof body._honey === "string" && body._honey.trim()) {
+    throw httpError(400, "The form could not be submitted.");
+  }
+  requireConsent(body);
+  const services = Array.isArray(body.services) ? body.services : body.services ? [body.services] : [];
+  if (services.length > 12) throw httpError(400, "Select fewer services.");
+  return {
+    name: cleanText(body.name, 120, { required: true, label: "Name" }),
+    email: cleanEmail(body.email),
+    phone: optionalPhone(body.phone),
+    organization: cleanText(body.organization, 160),
+    buyerType: cleanText(body.buyer_type || body.buyerType, 80),
+    services: services.map((item) => cleanText(item, 120)).filter(Boolean),
+    quantity: cleanText(body.quantity_scope || body.quantity, 200),
+    timeline: cleanText(body.timeline, 160),
+    details: cleanText(body.details, 4000),
+    consent: true,
+  };
+}
+
+function optionalPhone(value) {
+  const phone = cleanText(value, 40);
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 10 || digits.length > 15) throw httpError(400, "Enter a phone number with at least 10 digits.", ["Phone"]);
+  return phone;
+}
+
 export function validateInquiry(body) {
   const contact = contactBase(body);
   return {

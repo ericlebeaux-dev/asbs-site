@@ -176,7 +176,8 @@
   <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
     <h2 class="text-3xl font-extrabold text-asbs-navy text-center">Request a Quote</h2>
     <p class="mt-3 text-center text-slate-600">Send your list or scope and we'll reply with a quote.</p>
-    <form action="https://formsubmit.co/americanstandardsolutions@gmail.com" method="POST" class="mt-8 bg-white rounded-2xl p-8 shadow-sm border border-slate-200 grid sm:grid-cols-2 gap-5">
+    <div id="quoteAlert" class="mt-6" hidden role="status"></div>
+    <form id="quoteForm" action="https://formsubmit.co/americanstandardsolutions@gmail.com" method="POST" class="mt-8 bg-white rounded-2xl p-8 shadow-sm border border-slate-200 grid sm:grid-cols-2 gap-5">
       <input type="hidden" name="_subject" value="New ASBS quote request"><input type="hidden" name="_template" value="table"><input type="hidden" name="_next" value="https://www.americanstandardbusinesssolutions.com/thanks.html"><input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
       <label class="text-sm font-semibold">Name *<input name="name" required class="mt-1 w-full border border-slate-300 rounded-lg p-2.5"></label>
       <label class="text-sm font-semibold">Organization<input name="organization" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5"></label>
@@ -196,6 +197,7 @@
       <label class="text-sm font-semibold">Quantity or scope<input name="quantity_scope" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5"></label>
       <label class="text-sm font-semibold">Timeline<input name="timeline" placeholder="e.g. needed by Nov 15, recurring monthly" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5"></label>
       <label class="text-sm font-semibold sm:col-span-2">Details / RFQ number<textarea name="details" rows="4" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5"></textarea></label>
+      <label class="sm:col-span-2 text-sm flex gap-2 items-start"><input type="checkbox" name="consent" value="true" required class="mt-1"> <span>I agree that American Standard Business Solutions may contact me about this quote request. This request is not a purchase.</span></label>
       <button type="submit" class="sm:col-span-2 gold-gradient text-asbs-navy font-bold py-3 rounded-lg hover:brightness-110 hover:shadow-lg transition focus:outline-none focus:ring-4 focus:ring-asbs-teal/40">Submit Quote Request</button>
     </form>
   </div>
@@ -289,6 +291,7 @@
 </div>
 
 <script src="assets/js/asbs.js"></script>
+<script src="assets/js/forms.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{ if (window.lucide) lucide.createIcons(); });
 function openCap(){document.getElementById('capModal').classList.remove('hidden');document.body.style.overflow='hidden'}

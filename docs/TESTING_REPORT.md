@@ -2,7 +2,7 @@
 
 Command: `npm test` (`node --test test/*.test.js`) on Node v22.23.4.
 
-Result: **21 passed, 0 failed, 0 skipped.**
+Result: **26 passed, 0 failed, 0 skipped.**
 
 ## Automated
 
@@ -22,6 +22,10 @@ Result: **21 passed, 0 failed, 0 skipped.**
 | Render `PORT` selects the listen port and `0.0.0.0`; a local start with no `PORT` stays on `127.0.0.1:8787` | Passed |
 | Internal links and in-page anchors resolve | Passed |
 | Client HTML/JS has no private key, `ya29.` token, or `sk_live_` secret | Passed |
+| Quote request is saved when confirmation mail throws, and the response does not claim an email was sent | Passed |
+| Dashboard `?days=30` and `?days=90` return that many Central Time trend points; any other day count stays at 7 | Passed |
+| Confirmation text includes the Central Time booking detail and signature; the owner copy omits the cancellation code | Passed |
+| Gmail send is off unless `GOOGLE_GMAIL_REFRESH_TOKEN` is set, and a rejected Gmail response does not throw | Passed |
 
 ## Staging server smoke
 
