@@ -1,4 +1,5 @@
-import { TIME_ZONE } from "./time.js";
+import { MAX_BLOCKING_BUSY_MS } from "./slots.js";
+import { TIME_ZONE, zonedTimeToUtc } from "./time.js";
 
 export function calendarFromEnv(env = process.env, fetchImpl = globalThis.fetch) {
   const clientId = env.GOOGLE_CLIENT_ID || "";
@@ -45,20 +46,33 @@ export function calendarFromEnv(env = process.env, fetchImpl = globalThis.fetch)
     async listBusy(timeMin, timeMax) {
       if (!configured) throw notConfigured();
       const token = await accessToken();
-      const response = await fetchImpl("https://www.googleapis.com/calendar/v3/freeBusy", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ timeMin, timeMax, items: [{ id: calendarId }] }),
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw calendarError("Google Calendar availability could not be checked. No appointment was booked.");
+      const busy = [];
+      let pageToken = "";
+      for (let page = 0; page < 40; page += 1) {
+        const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`);
+        url.searchParams.set("timeMin", timeMin);
+        url.searchParams.set("timeMax", timeMax);
+        url.searchParams.set("singleEvents", "true");
+        url.searchParams.set("orderBy", "startTime");
+        url.searchParams.set("maxResults", "250");
+        url.searchParams.set("fields", "items(status,transparency,start,end,eventType),nextPageToken");
+        for (const eventType of ["default", "outOfOffice", "focusTime"]) {
+          url.searchParams.append("eventTypes", eventType);
+        }
+        if (pageToken) url.searchParams.set("pageToken", pageToken);
+        const response = await fetchImpl(url, { headers: { Authorization: `Bearer ${token}` } });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw calendarError("Google Calendar availability could not be checked. No appointment was booked.");
+        }
+        for (const item of payload.items || []) {
+          const interval = busyInterval(item);
+          if (interval) busy.push(interval);
+        }
+        pageToken = payload.nextPageToken || "";
+        if (!pageToken) return busy;
       }
-      const busy = payload.calendars?.[calendarId]?.busy || [];
-      if (payload.calendars?.[calendarId]?.errors?.length) {
-        throw calendarError("Google Calendar did not return a reliable busy list. No appointment was booked.");
-      }
-      return busy.map((item) => ({ start: new Date(item.start), end: new Date(item.end) }));
+      throw calendarError("Google Calendar availability could not be checked. No appointment was booked.");
     },
     async createEvent(booking) {
       if (!configured) throw notConfigured();
@@ -99,6 +113,27 @@ export function calendarFromEnv(env = process.env, fetchImpl = globalThis.fetch)
       }
     },
   };
+}
+
+function busyInterval(item) {
+  if (!item || item.status === "cancelled" || item.transparency === "transparent") return null;
+  if (item.eventType === "workingLocation" || item.eventType === "birthday") return null;
+  let start;
+  let end;
+  if (item.start?.dateTime && item.end?.dateTime) {
+    start = new Date(item.start.dateTime);
+    end = new Date(item.end.dateTime);
+  } else if (item.start?.date && item.end?.date) {
+    const [ys, ms, ds] = item.start.date.split("-").map(Number);
+    const [ye, me, de] = item.end.date.split("-").map(Number);
+    start = zonedTimeToUtc(ys, ms, ds, 0, 0);
+    end = zonedTimeToUtc(ye, me, de, 0, 0);
+  } else {
+    return null;
+  }
+  const span = end.getTime() - start.getTime();
+  if (!Number.isFinite(span) || span <= 0 || span > MAX_BLOCKING_BUSY_MS) return null;
+  return { start, end };
 }
 
 function calendarError(message) {

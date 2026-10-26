@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { generateSlots } from "../server/slots.js";
+import { generateSlots, HORIZON_DAYS } from "../server/slots.js";
 import { zonedParts, zonedTimeToUtc } from "../server/time.js";
 
 test("Chicago clock converts correctly across daylight saving time", () => {
@@ -39,6 +39,32 @@ test("a 45-minute consultation cannot run past the window", () => {
   const morning = slots.filter((slot) => slot.start.startsWith("2026-10-27T14") || slot.start.startsWith("2026-10-27T15"));
   assert.equal(morning.at(-1).start, "2026-10-27T15:15:00.000Z");
   assert.equal(morning.some((slot) => slot.start === "2026-10-27T15:30:00.000Z"), false);
+});
+
+test("a year-long busy block does not hide real openings", () => {
+  const now = new Date("2026-10-26T12:00:00.000Z");
+  const yearLong = [{ start: new Date("2026-01-21T06:41:43.000Z"), end: new Date("2026-12-31T21:41:00.000Z") }];
+  const open = generateSlots({ now, days: 8, typeId: "discovery_15", minNoticeHours: 24, bufferMinutes: 15, busy: yearLong });
+  assert.equal(open.some((slot) => slot.start === "2026-10-27T14:00:00.000Z"), true);
+  const meeting = [{ start: new Date("2026-10-27T14:00:00.000Z"), end: new Date("2026-10-27T14:30:00.000Z") }];
+  const blocked = generateSlots({ now, days: 8, typeId: "discovery_15", minNoticeHours: 24, bufferMinutes: 15, busy: meeting });
+  assert.equal(blocked.some((slot) => slot.start === "2026-10-27T14:00:00.000Z"), false);
+  assert.equal(blocked.some((slot) => slot.start === "2026-10-27T18:00:00.000Z"), true);
+});
+
+test("slots reach 365 days ahead and stay inside one requested month", () => {
+  const now = new Date("2026-10-26T12:00:00.000Z");
+  const year = generateSlots({ now, days: HORIZON_DAYS + 1, typeId: "discovery_15", minNoticeHours: 24, bufferMinutes: 0, busy: [] });
+  assert.equal(year.some((slot) => slot.start.startsWith("2027-10-26")), true);
+  assert.equal(year.some((slot) => slot.start.startsWith("2027-10-27")), false);
+  const november = generateSlots({ now, month: { year: 2026, month: 11 }, typeId: "discovery_15", minNoticeHours: 24, bufferMinutes: 0, busy: [] });
+  assert.ok(november.length > 0);
+  for (const slot of november) {
+    assert.equal(zonedParts(new Date(slot.start)).month, 11);
+    assert.equal(zonedParts(new Date(slot.start)).year, 2026);
+  }
+  const tooFar = generateSlots({ now, month: { year: 2027, month: 11 }, typeId: "discovery_15", minNoticeHours: 0, bufferMinutes: 0, busy: [] });
+  assert.equal(tooFar.length, 0);
 });
 
 test("Sunday has no consultation slots", () => {

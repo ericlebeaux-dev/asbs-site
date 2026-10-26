@@ -8,6 +8,16 @@ export const WINDOWS = [
 
 export const STEP_MINUTES = 15;
 
+/** Last bookable date is this many days after today in America/Chicago. */
+export const HORIZON_DAYS = 365;
+
+/**
+ * Google free/busy merges overlapping events into one span. A year-long item
+ * therefore hides every real opening. Busy intervals longer than this are
+ * reminders, not meetings, and do not block a consultation.
+ */
+export const MAX_BLOCKING_BUSY_MS = 14 * 24 * 60 * 60 * 1000;
+
 export const CONSULTATION_TYPES = {
   discovery_15: {
     id: "discovery_15",
@@ -46,9 +56,22 @@ export function overlapsRange(startMs, endMs, otherStartMs, otherEndMs, bufferMi
   return startMs < otherEndMs + bufferMs && endMs > otherStartMs - bufferMs;
 }
 
+function ymdNumber(value) {
+  return value.year * 10000 + value.month * 100 + value.day;
+}
+
+export function blockingBusy(busy, maxMs = MAX_BLOCKING_BUSY_MS) {
+  return busy.filter((item) => {
+    const span = item.end.getTime() - item.start.getTime();
+    return Number.isFinite(span) && span > 0 && span <= maxMs;
+  });
+}
+
 export function generateSlots({
   now,
-  days = 21,
+  days,
+  month,
+  day,
   typeId,
   busy = [],
   minNoticeHours = 24,
@@ -61,13 +84,31 @@ export function generateSlots({
     error.status = 400;
     throw error;
   }
-  const boundedDays = Math.min(Math.max(Number(days) || 21, 1), 60);
   const today = zonedToday(now, timeZone);
+  const horizonLast = addDaysYmd(today.year, today.month, today.day, HORIZON_DAYS);
+  let cursor;
+  let endExclusive;
+  if (day) {
+    cursor = { year: day.year, month: day.month, day: day.day };
+    endExclusive = addDaysYmd(day.year, day.month, day.day, 1);
+  } else if (month) {
+    cursor = { year: month.year, month: month.month, day: 1 };
+    endExclusive = month.month === 12
+      ? { year: month.year + 1, month: 1, day: 1 }
+      : { year: month.year, month: month.month + 1, day: 1 };
+  } else {
+    const boundedDays = Math.min(Math.max(Number(days) || (HORIZON_DAYS + 1), 1), HORIZON_DAYS + 1);
+    cursor = { year: today.year, month: today.month, day: today.day };
+    endExclusive = addDaysYmd(today.year, today.month, today.day, boundedDays);
+  }
   const noticeCutoff = now.getTime() + minNoticeHours * 60 * 60 * 1000;
+  const intervals = blockingBusy(busy);
   const slots = [];
 
-  for (let offset = 0; offset < boundedDays; offset += 1) {
-    const ymd = addDaysYmd(today.year, today.month, today.day, offset);
+  while (ymdNumber(cursor) < ymdNumber(endExclusive)) {
+    const ymd = cursor;
+    cursor = addDaysYmd(ymd.year, ymd.month, ymd.day, 1);
+    if (ymdNumber(ymd) < ymdNumber(today) || ymdNumber(ymd) > ymdNumber(horizonLast)) continue;
     const noon = zonedTimeToUtc(ymd.year, ymd.month, ymd.day, 12, 0, timeZone);
     const parts = zonedParts(noon, timeZone);
     if (parts.weekday === "Sat" || parts.weekday === "Sun") continue;
@@ -84,7 +125,7 @@ export function generateSlots({
         );
         const end = new Date(start.getTime() + type.minutes * 60 * 1000);
         if (start.getTime() < noticeCutoff) continue;
-        const blocked = busy.some((item) => overlapsRange(
+        const blocked = intervals.some((item) => overlapsRange(
           start.getTime(),
           end.getTime(),
           item.start.getTime(),

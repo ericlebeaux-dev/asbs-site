@@ -58,7 +58,7 @@ test("Google event creation does not email the customer", async () => {
     end: "2026-10-27T18:30:00.000Z",
   });
 
-  const creates = calls.filter((call) => call.url.includes("/events"));
+  const creates = calls.filter((call) => call.method === "POST" && call.url.includes("/events"));
   assert.equal(creates.length, 2);
   assert.match(creates[0].url, /sendUpdates=none/);
   assert.match(creates[0].url, /conferenceDataVersion=1/);
@@ -70,6 +70,54 @@ test("Google event creation does not email the customer", async () => {
   assert.equal(phone.conferenceData, undefined);
   assert.match(phone.location, /281-555-0100/);
   assert.equal(created.meetLink, "https://meet.google.com/abc-defg-hij");
+});
+
+test("calendar busy list keeps meetings and skips year-long or free events", async () => {
+  const fetchImpl = async (url) => {
+    if (String(url).includes("oauth2.googleapis.com")) {
+      return { ok: true, status: 200, json: async () => ({ access_token: "ya29.fake-token", expires_in: 3600 }) };
+    }
+    assert.match(String(url), /\/events\?/);
+    assert.match(String(url), /singleEvents=true/);
+    assert.equal(String(url).includes("summary"), false);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        items: [
+          {
+            status: "confirmed",
+            start: { dateTime: "2026-01-21T06:41:43Z" },
+            end: { dateTime: "2026-12-31T21:41:00Z" },
+          },
+          {
+            status: "confirmed",
+            transparency: "transparent",
+            start: { dateTime: "2026-10-28T14:00:00Z" },
+            end: { dateTime: "2026-10-28T14:30:00Z" },
+          },
+          {
+            status: "confirmed",
+            start: { dateTime: "2026-10-28T15:00:00Z" },
+            end: { dateTime: "2026-10-28T16:00:00Z" },
+          },
+          {
+            status: "cancelled",
+            start: { dateTime: "2026-10-28T18:00:00Z" },
+            end: { dateTime: "2026-10-28T18:30:00Z" },
+          },
+        ],
+      }),
+    };
+  };
+  const calendar = calendarFromEnv({
+    GOOGLE_CLIENT_ID: "client",
+    GOOGLE_CLIENT_SECRET: "secret",
+    GOOGLE_REFRESH_TOKEN: "refresh",
+  }, fetchImpl);
+  const busy = await calendar.listBusy("2026-10-01T00:00:00.000Z", "2026-11-01T00:00:00.000Z");
+  assert.equal(busy.length, 1);
+  assert.equal(busy[0].start.toISOString(), "2026-10-28T15:00:00.000Z");
 });
 
 test("calendar client reports when credentials are missing", () => {

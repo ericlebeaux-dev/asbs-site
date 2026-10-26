@@ -5,9 +5,9 @@ import path from "node:path";
 import { clearCookie, passwordsMatch, readCookie, sessionCookie, signSession, verifySession } from "./auth.js";
 import { calendarFromEnv } from "./calendar.js";
 import { PACKAGES, PRICING_STATUS } from "./packages.js";
-import { consultationType, generateSlots } from "./slots.js";
+import { HORIZON_DAYS, consultationType, generateSlots } from "./slots.js";
 import { createStore } from "./store.js";
-import { TIME_ZONE, formatZoned } from "./time.js";
+import { TIME_ZONE, addDaysYmd, formatZoned, zonedParts, zonedTimeToUtc, zonedToday } from "./time.js";
 import {
   httpError,
   validateBooking,
@@ -36,7 +36,7 @@ export function loadConfig(options = {}) {
     port: Number(options.port || env.PORT || env.ASBS_PORT || 8787),
     minNoticeHours: numberOr(env.ASBS_MIN_NOTICE_HOURS, 24),
     bufferMinutes: numberOr(env.ASBS_BUFFER_MINUTES, 15),
-    slotDays: numberOr(env.ASBS_SLOT_DAYS, 21),
+    slotDays: Math.min(Math.max(numberOr(env.ASBS_SLOT_DAYS, HORIZON_DAYS), 1), HORIZON_DAYS),
     environment: env.ASBS_ENV || "staging",
     dashboardPassword: password,
     sessionSecret,
@@ -94,12 +94,31 @@ async function routeApi(req, res, url, ctx) {
   }
   if (req.method === "GET" && url.pathname === "/api/slots") {
     const type = url.searchParams.get("type") || "";
-    const days = Number(url.searchParams.get("days") || config.slotDays);
-    const slots = await slotsFor(config, store, calendar, type, days);
+    const monthRaw = url.searchParams.get("month") || "";
+    const month = parseMonth(monthRaw);
+    if (monthRaw && !month) {
+      sendJson(res, 400, { message: "Choose a month as YYYY-MM." });
+      return;
+    }
+    const daysRaw = url.searchParams.get("days");
+    const days = daysRaw ? Number(daysRaw) : undefined;
+    if (daysRaw && (!Number.isFinite(days) || days < 1)) {
+      sendJson(res, 400, { message: "Choose a valid number of days." });
+      return;
+    }
+    const range = month
+      ? { month }
+      : daysRaw
+        ? { days }
+        : currentMonthRange(config.now());
+    const slots = await slotsFor(config, store, calendar, type, range);
+    const bounds = horizonBounds(config.now());
     sendJson(res, 200, {
       timezone: TIME_ZONE,
       type,
       calendarConnected: calendar.configured,
+      ...bounds,
+      month: range.month ? monthKey(range.month.year, range.month.month) : null,
       slots,
     });
     return;
@@ -281,25 +300,27 @@ function health(config, calendar) {
     consultationWindows: ["09:00-11:00 America/Chicago", "13:00-15:00 America/Chicago"],
     minimumNoticeHours: config.minNoticeHours,
     bufferMinutes: config.bufferMinutes,
+    bookingHorizonDays: HORIZON_DAYS,
   };
 }
 
-async function slotsFor(config, store, calendar, type, days) {
+async function slotsFor(config, store, calendar, type, range) {
   if (!consultationType(type)) throw httpError(400, "Choose a consultation type.");
   const now = config.now();
-  const horizonDays = Math.min(Math.max(days || config.slotDays, 1), 60);
-  const busy = store.activeBusy();
+  const busy = store.activeBusy().map(({ start, end }) => ({ start, end }));
   if (calendar.configured) {
-    const end = new Date(now.getTime() + (horizonDays + 1) * 24 * 60 * 60 * 1000);
+    const window = queryWindow(now, range);
     try {
-      busy.push(...await calendar.listBusy(now.toISOString(), end.toISOString()));
+      busy.push(...await calendar.listBusy(window.start.toISOString(), window.end.toISOString()));
     } catch (error) {
       throw httpError(503, error.message || "Calendar availability could not be checked. No times are being offered.");
     }
   }
   return generateSlots({
     now,
-    days: horizonDays,
+    days: range.days,
+    month: range.month,
+    day: range.day,
     typeId: type,
     busy,
     minNoticeHours: config.minNoticeHours,
@@ -311,7 +332,7 @@ async function book(config, store, calendar, fields) {
   const type = consultationType(fields.type);
   return store.transact(async ({ read, write, tokenHash }) => {
     const now = config.now();
-    const slots = await offeredInside(config, calendar, read, fields.type, now);
+    const slots = await offeredInside(config, calendar, read, fields.type, now, "", fields.start);
     const wanted = Date.parse(fields.start);
     const slot = slots.find((item) => Date.parse(item.start) === wanted);
     if (!slot) throw httpError(409, "That time is no longer available. Choose another open slot.");
@@ -438,27 +459,81 @@ async function book(config, store, calendar, fields) {
   });
 }
 
-async function offeredInside(config, calendar, read, type, now, ignoreBookingId = "") {
+async function offeredInside(config, calendar, read, type, now, ignoreBookingId = "", focusStart = "") {
   const data = read();
   const busy = data.bookings
     .filter((booking) => booking.status === "scheduled" && booking.id !== ignoreBookingId)
     .map((booking) => ({ start: new Date(booking.start), end: new Date(booking.end) }));
+  const focus = Number.isFinite(Date.parse(focusStart)) ? zonedParts(new Date(focusStart)) : null;
+  const range = focus
+    ? { day: { year: focus.year, month: focus.month, day: focus.day } }
+    : { days: config.slotDays };
   if (calendar.configured) {
-    const end = new Date(now.getTime() + (config.slotDays + 1) * 24 * 60 * 60 * 1000);
+    const window = queryWindow(now, range);
     try {
-      busy.push(...await calendar.listBusy(now.toISOString(), end.toISOString()));
+      busy.push(...await calendar.listBusy(window.start.toISOString(), window.end.toISOString()));
     } catch (error) {
       throw httpError(503, error.message || "Calendar availability could not be checked. Nothing was changed.");
     }
   }
   return generateSlots({
     now,
-    days: config.slotDays,
+    days: range.days,
+    day: range.day,
     typeId: type,
     busy,
     minNoticeHours: config.minNoticeHours,
     bufferMinutes: config.bufferMinutes,
   });
+}
+
+function currentMonthRange(now) {
+  const today = zonedToday(now);
+  return { month: { year: today.year, month: today.month } };
+}
+
+function parseMonth(value) {
+  const match = /^(\d{4})-(\d{2})$/.exec(value || "");
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12 || year < 2020 || year > 2100) return null;
+  return { year, month };
+}
+
+function monthKey(year, month) {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function horizonBounds(now) {
+  const today = zonedToday(now);
+  const last = addDaysYmd(today.year, today.month, today.day, HORIZON_DAYS);
+  return {
+    firstMonth: monthKey(today.year, today.month),
+    lastMonth: monthKey(last.year, last.month),
+    horizonDays: HORIZON_DAYS,
+  };
+}
+
+function queryWindow(now, range) {
+  if (range.day) {
+    const next = addDaysYmd(range.day.year, range.day.month, range.day.day, 1);
+    return {
+      start: zonedTimeToUtc(range.day.year, range.day.month, range.day.day, 0, 0),
+      end: zonedTimeToUtc(next.year, next.month, next.day, 0, 0),
+    };
+  }
+  if (range.month) {
+    const nextMonth = range.month.month === 12
+      ? { year: range.month.year + 1, month: 1 }
+      : { year: range.month.year, month: range.month.month + 1 };
+    return {
+      start: zonedTimeToUtc(range.month.year, range.month.month, 1, 0, 0),
+      end: zonedTimeToUtc(nextMonth.year, nextMonth.month, 1, 0, 0),
+    };
+  }
+  const days = Math.min(Math.max(Number(range.days) || HORIZON_DAYS, 1), HORIZON_DAYS + 1);
+  return { start: now, end: new Date(now.getTime() + (days + 1) * 24 * 60 * 60 * 1000) };
 }
 
 function requireBooking(store, id, token) {
@@ -507,7 +582,7 @@ async function reschedule(config, store, calendar, id, body) {
     const data = read();
     const current = data.bookings.find((item) => item.id === id);
     if (!current || current.status !== "scheduled") throw httpError(409, "That appointment is not active.");
-    const slots = await offeredInside(config, calendar, read, current.type, config.now(), id);
+    const slots = await offeredInside(config, calendar, read, current.type, config.now(), id, body.start);
     const slot = slots.find((item) => Date.parse(item.start) === wanted);
     if (!slot) throw httpError(409, "That time is no longer available.");
     let meetLink = current.meetLink;

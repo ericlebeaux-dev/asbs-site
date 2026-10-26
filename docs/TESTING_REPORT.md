@@ -2,7 +2,7 @@
 
 Command: `npm test` (`node --test test/*.test.js`) on Node v22.23.4.
 
-Result: **18 passed, 0 failed, 0 skipped.**
+Result: **21 passed, 0 failed, 0 skipped.**
 
 ## Automated
 

@@ -98,6 +98,7 @@ test("health, packages, and static protections", async () => {
     assert.equal(packages.data.packages[0].price, "$249");
     assert.equal(health.data.payments.pricingStatus, "approved");
     assert.equal(health.data.payments.livePackageCheckout, false);
+    assert.equal(health.data.bookingHorizonDays, 365);
 
     const home = await fetch(ctx.base + "/");
     assert.equal(home.status, 200);

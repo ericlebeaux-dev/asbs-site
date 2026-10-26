@@ -36,7 +36,7 @@
   <p class="text-asbs-teal font-semibold uppercase tracking-widest text-xs">No charge</p>
   <h1 class="mt-2 text-4xl font-extrabold text-asbs-navy">Schedule a free consultation</h1>
   <p class="mt-4 text-slate-600 max-w-3xl">All introductory consultations are free. A charge applies only if you later agree in writing to a consulting service. Booking this time does not hire ASBS, does not authorize a registration or bid, and does not purchase the Quick Bid Review.</p>
-  <p class="mt-3 text-sm text-slate-600">Times are shown in Central Time (America/Chicago) and follow daylight saving time. Open windows are weekdays, 9:00–11:00 a.m. and 1:00–3:00 p.m. Office hours remain Monday–Friday, 8:00 a.m.–5:00 p.m. Central.</p>
+  <p class="mt-3 text-sm text-slate-600">Times are shown in Central Time (America/Chicago) and follow daylight saving time. Open windows are weekdays, 9:00–11:00 a.m. and 1:00–3:00 p.m. You can move month by month across the next 12 months. A time has to be at least 24 hours away. Office hours remain Monday–Friday, 8:00 a.m.–5:00 p.m. Central.</p>
   <p id="calendarStatus" class="mt-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 px-4 py-3 text-sm" role="status">Checking whether Google Calendar is connected…</p>
   <div id="consultAlert" class="mt-4" hidden role="alert"></div>
 
@@ -68,6 +68,12 @@
     <fieldset>
       <legend class="text-lg font-bold text-asbs-navy">2. Open times</legend>
       <p id="selectedSlot" class="mt-2 text-sm font-semibold text-asbs-navy">No time selected yet.</p>
+      <div class="mt-4 flex items-center justify-between gap-3">
+        <button type="button" id="prevMonth" class="min-h-11 px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold hover:border-asbs-teal disabled:opacity-40">Previous month</button>
+        <p id="monthLabel" class="text-center font-bold text-asbs-navy" aria-live="polite">This month</p>
+        <button type="button" id="nextMonth" class="min-h-11 px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold hover:border-asbs-teal disabled:opacity-40">Next month</button>
+      </div>
+      <p id="slotSummary" class="mt-2 text-sm text-slate-600"></p>
       <div id="slotList" class="mt-4 space-y-4" aria-live="polite"></div>
     </fieldset>
     <fieldset id="customerFields" class="grid sm:grid-cols-2 gap-4">

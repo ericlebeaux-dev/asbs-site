@@ -2,6 +2,9 @@
   var selectedType = "discovery_15";
   var selectedStart = "";
   var confirmation = null;
+  var currentMonth = "";
+  var firstMonth = "";
+  var lastMonth = "";
 
   function byId(id) { return document.getElementById(id); }
 
@@ -20,13 +23,34 @@
     loadSlots();
   }
 
-  function renderSlots(slots) {
+  function monthTitle(ym) {
+    var parts = String(ym || "").split("-");
+    if (parts.length !== 2) return "This month";
+    var date = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, 1, 12));
+    return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", year: "numeric" }).format(date);
+  }
+
+  function shiftMonth(ym, delta) {
+    var parts = String(ym || "").split("-").map(Number);
+    var date = new Date(Date.UTC(parts[0], parts[1] - 1 + delta, 1));
+    return date.getUTCFullYear() + "-" + String(date.getUTCMonth() + 1).padStart(2, "0");
+  }
+
+  function renderSlots(slots, month) {
     var host = byId("slotList");
+    var summary = byId("slotSummary");
+    byId("monthLabel").textContent = monthTitle(month);
+    var prev = byId("prevMonth");
+    var next = byId("nextMonth");
+    prev.disabled = !firstMonth || currentMonth <= firstMonth;
+    next.disabled = !lastMonth || currentMonth >= lastMonth;
     host.replaceChildren();
     if (!slots.length) {
-      host.innerHTML = "<p class=\"text-sm text-slate-600\">No open times in the current window. Call (281) 954-5167 and ASBS will look for another time.</p>";
+      summary.textContent = "";
+      host.innerHTML = "<p class=\"text-sm text-slate-600\">No open times in " + monthTitle(month) + ". Use the month buttons to check another month, or call (281) 954-5167.</p>";
       return;
     }
+    summary.textContent = slots.length + " open time" + (slots.length === 1 ? "" : "s") + " in " + monthTitle(month) + ". Weekdays, 9:00–11:00 a.m. and 1:00–3:00 p.m. Central.";
     var groups = {};
     slots.forEach(function (slot) {
       var label = new Intl.DateTimeFormat("en-US", {
@@ -74,11 +98,17 @@
   async function loadSlots() {
     var host = byId("slotList");
     host.textContent = "Checking open times…";
+    byId("slotSummary").textContent = "";
     try {
-      var data = await window.ASBS.apiFetch("/api/slots?type=" + encodeURIComponent(selectedType));
+      var query = "/api/slots?type=" + encodeURIComponent(selectedType);
+      if (currentMonth) query += "&month=" + encodeURIComponent(currentMonth);
+      var data = await window.ASBS.apiFetch(query);
+      firstMonth = data.firstMonth || firstMonth;
+      lastMonth = data.lastMonth || lastMonth;
+      currentMonth = data.month || currentMonth || firstMonth;
       selectedStart = "";
       byId("selectedSlot").textContent = "No time selected yet.";
-      renderSlots(data.slots || []);
+      renderSlots(data.slots || [], currentMonth);
     } catch (error) {
       host.textContent = "";
       window.ASBS.showMessage(byId("consultAlert"), error.message, "error");
@@ -110,6 +140,16 @@
     if (params.get("package") === "quick-bid-review") selectedType = "quick_bid_preview_30";
     document.querySelectorAll("[data-type]").forEach(function (button) {
       button.addEventListener("click", function () { setType(button.getAttribute("data-type")); });
+    });
+    byId("prevMonth").addEventListener("click", function () {
+      if (!currentMonth || currentMonth <= firstMonth) return;
+      currentMonth = shiftMonth(currentMonth, -1);
+      loadSlots();
+    });
+    byId("nextMonth").addEventListener("click", function () {
+      if (!currentMonth || (lastMonth && currentMonth >= lastMonth)) return;
+      currentMonth = shiftMonth(currentMonth, 1);
+      loadSlots();
     });
     setType(selectedType);
     restore();
