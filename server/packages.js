@@ -1,11 +1,11 @@
-/** Proposed packages. Not a live offer and not purchasable until the owner approves. */
-export const PRICING_STATUS = "proposed_pending_owner_approval";
+/** Approved package prices. Online checkout stays off until a later owner decision. */
+export const PRICING_STATUS = "approved";
 
 export const PACKAGES = [
   {
     id: "quick-bid-review",
     name: "Quick Bid Review",
-    proposedPrice: "$249",
+    price: "$249",
     priceNote: "One solicitation. This is a paid written review, not a charge for the free introductory call.",
     customer: "A business that already has one solicitation and wants a documented bid or no-bid recommendation before spending time on a response.",
     deliverables: [
@@ -20,7 +20,7 @@ export const PACKAGES = [
       "Solicitations over 50 pages, amendments after delivery, or a second solicitation are out of scope and require a separate written quote.",
       "Does not guarantee that a bid would be responsive, responsible, or awarded.",
     ],
-    delivery: "Proposed: 3 business days after ASBS has the solicitation and the completed intake. The owner must confirm this timeline before it is promised to a customer.",
+    delivery: "3 business days after ASBS has the solicitation and the completed intake.",
     customerResponsibilities: [
       "Provide the solicitation and any amendments.",
       "Provide accurate information about registrations, certifications, and past work the customer wants considered.",
@@ -32,7 +32,7 @@ export const PACKAGES = [
   {
     id: "contractor-starter",
     name: "Contractor Starter",
-    proposedPrice: "$599",
+    price: "$599",
     priceNote: "A defined readiness package. Not an open-ended consulting retainer.",
     customer: "A small business preparing to pursue government work and wanting a clear starting checklist.",
     deliverables: [
@@ -47,7 +47,7 @@ export const PACKAGES = [
       "Does not guarantee any certification or agency approval.",
       "Passwords and login codes are not collected.",
     ],
-    delivery: "Proposed: 10 business days after intake is complete. The owner must confirm this timeline.",
+    delivery: "10 business days after intake is complete.",
     customerResponsibilities: [
       "Complete intake and provide the registrations and narrative the customer wants reviewed.",
       "The customer remains the owner of every government account.",
@@ -59,7 +59,7 @@ export const PACKAGES = [
   {
     id: "registration-accelerator",
     name: "Registration Accelerator",
-    proposedPrice: "$1,299",
+    price: "$1,299",
     priceNote: "Guided preparation for registrations the customer submits. Agency fees are extra and are not included.",
     customer: "A business that is ready to prepare SAM.gov and one state or local vendor registration and wants a document review before the customer submits.",
     deliverables: [
@@ -77,7 +77,7 @@ export const PACKAGES = [
       "Does not guarantee approval, activation, or a contract award.",
       "Additional registries are quoted separately.",
     ],
-    delivery: "Proposed: 15 business days of ASBS preparation after intake. Clocks inside an agency are not part of that count. The owner must confirm this timeline.",
+    delivery: "15 business days of ASBS preparation after intake. Clocks inside an agency are not part of that count.",
     customerResponsibilities: [
       "Provide accurate business information and supporting documents they are comfortable sharing.",
       "Redact Social Security numbers before sending any form.",
@@ -89,7 +89,7 @@ export const PACKAGES = [
   {
     id: "contractor-launch",
     name: "Full-Service Contractor Launch",
-    proposedPrice: "$2,499",
+    price: "$2,499",
     priceNote: "A capped launch engagement. It is not unlimited capture or proposal writing.",
     customer: "A business that wants a structured first month of public-sector selling after the free consultation.",
     deliverables: [
@@ -105,20 +105,20 @@ export const PACKAGES = [
       "Does not include bonding, financing, insurance placement, or legal review.",
       "Does not guarantee a contract award, a certification, or agency approval.",
     ],
-    delivery: "Proposed: 30 business days after intake. The owner must confirm this timeline.",
+    delivery: "30 business days after intake.",
     customerResponsibilities: [
       "Provide timely documents and decisions.",
       "Confirm that any past-performance statements are accurate.",
       "Submit any registration or bid in the customer's own name.",
     ],
-    upgrade: "Contracting Growth Partner, after the owner approves monthly terms.",
+    upgrade: "Contracting Growth Partner.",
     consultationType: "onboarding_45",
   },
   {
     id: "growth-partner",
     name: "Contracting Growth Partner",
-    proposedPrice: "$999–$2,499/month",
-    priceNote: "A proposed monthly range. The owner has not approved which tasks sit at which price. No subscription will be billed.",
+    price: "$999–$2,499/month",
+    priceNote: "A monthly range. The engagement letter sets the amount inside this range. No subscription is billed on this website.",
     customer: "A business that wants ongoing, capped support after a launch engagement.",
     deliverables: [
       "A monthly pipeline review.",
@@ -130,11 +130,11 @@ export const PACKAGES = [
     limitations: [
       "Work stops at the monthly caps above. Extra notices, proposals, and meetings are quoted separately.",
       "Proposal writing, registration submission, travel, and agency calls are excluded unless a written scope adds them.",
-      "Either party would be able to stop at the end of a month once terms exist. No automatic renewal will be turned on with this website.",
+      "Either party can stop at the end of a month under the written agreement. No automatic renewal is turned on by this website.",
       "Does not guarantee awards, certifications, financing, or agency approval.",
-      "Not available for purchase, and no recurring charge will be created, until the owner approves terms.",
+      "Online checkout is off. No recurring charge is created on this website.",
     ],
-    delivery: "Proposed monthly cycle. The owner must approve the price, the cap, and the cancellation terms before a customer is billed.",
+    delivery: "A monthly cycle. The written agreement sets the amount inside the published range.",
     customerResponsibilities: [
       "Name a decision maker who can answer within the month.",
       "Keep registrations and representations accurate.",

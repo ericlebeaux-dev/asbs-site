@@ -6,7 +6,7 @@ Branch: `cursor/asbs-website-completion-0d43`. Production was not modified.
 |---|---|---|
 | Resume existing site rather than a new demo | Complete | Homepage, capability statement, NAICS list, quote form, and invoice link remain. New pages use the same navy, gold, teal, and Inter. |
 | Services and nationwide / Houston split | Complete | `services.html` and the homepage consulting band. Facility work stays Greater Houston/Katy. Supplies and consulting say Serving Nationwide. |
-| Five proposed packages | Complete as proposals | `packages.html` and `server/packages.js`. Prices are marked pending owner approval. No checkout. |
+| Five package prices | Approved October 26, 2026 | `packages.html` and `server/packages.js`. `pricingStatus` is `approved`. `purchasable` stays false. No checkout. |
 | Free consultation UI | Complete on the staging server | `consult.html` loads open Central Time slots from `GET /api/slots`. |
 | Conflict prevention and buffers | Complete in the ASBS store | `test/api.test.js` books one slot, rejects the same slot and the buffered neighbor, then frees it on cancel. |
 | Daylight saving time | Complete | `test/slots.test.js` checks October CDT, November CST, and March CDT. |
@@ -21,9 +21,9 @@ Branch: `cursor/asbs-website-completion-0d43`. Production was not modified.
 | Weekly report | Complete from server data | `GET /api/reports/weekly`. Revenue stays zero unless the owner attests a collected payment. Stripe and Analytics are labeled not connected. |
 | SEO basics | Partial | Titles, descriptions, canonical URLs, sitemap, robots, and organization/service structured data. No Search Console token and no Analytics id were available. No LinkedIn URL was on the existing site, so none was added. |
 | Legal pages | Partial | October 13 policy text kept. October 26 addenda are drafts for legal review. |
-| Public staging URL | Blocked | See `docs/DEPLOYMENT.md`. |
-| Automated tests | Complete | 17 tests, 0 failures, Node 22. See `docs/TESTING_REPORT.md`. |
-| Friends-and-family URL | Not ready | There is no shareable host yet, and Google Calendar is not connected. |
+| Public staging URL | Blocked on a Render sign-in | `render.yaml` and `docs/STAGING.md`. No host credentials were available, so nothing was deployed. Production and GitHub Pages were not changed. |
+| Automated tests | Complete | 18 tests, 0 failures, Node 22. See `docs/TESTING_REPORT.md`. |
+| Friends-and-family URL | Not ready | The owner still has to apply the Render blueprint. Google Calendar stays disconnected until the OAuth steps in `docs/GOOGLE_CALENDAR_SETUP.md`. |
 
 Positioning line on the site: People. Process. Solutions. Results.
 

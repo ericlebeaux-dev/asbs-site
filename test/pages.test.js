@@ -33,14 +33,16 @@ test("internal links and anchors resolve", () => {
   assert.deepEqual(missing, []);
 });
 
-test("packages stay proposed and are not wired to checkout", () => {
+test("approved package prices are shown and checkout stays off", () => {
   const html = read("packages.html");
   for (const item of PACKAGES) {
     assert.equal(html.includes(item.name), true, item.name);
-    assert.equal(html.includes(item.proposedPrice), true, item.proposedPrice);
+    assert.equal(html.includes(item.price), true, item.price);
   }
   assert.match(html, /not available for purchase/i);
-  assert.match(html, /Pending owner approval/);
+  assert.match(html, /Online checkout is off/);
+  assert.equal(/pending owner approval/i.test(html), false);
+  assert.equal(/Proposed \$/.test(html), false);
   assert.equal(html.includes("buy.stripe.com"), false);
   assert.equal(html.includes("sk_live"), false);
 });

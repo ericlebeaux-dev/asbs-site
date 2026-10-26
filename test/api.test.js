@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { createApp } from "../server/app.js";
+import { createApp, loadConfig } from "../server/app.js";
 
 const NOW = "2026-10-26T12:00:00.000Z";
 
@@ -70,6 +70,18 @@ function customer(overrides = {}) {
   };
 }
 
+test("hosted PORT binds all interfaces and local default stays loopback", () => {
+  const local = loadConfig({ env: { PORT: "", ASBS_HOST: "", ASBS_PORT: "" } });
+  assert.equal(local.host, "127.0.0.1");
+  assert.equal(local.port, 8787);
+  const hosted = loadConfig({ env: { PORT: "10000", ASBS_HOST: "", ASBS_PORT: "8787" } });
+  assert.equal(hosted.host, "0.0.0.0");
+  assert.equal(hosted.port, 10000);
+  const pinned = loadConfig({ env: { PORT: "10000", ASBS_HOST: "127.0.0.1" } });
+  assert.equal(pinned.host, "127.0.0.1");
+  assert.equal(pinned.port, 10000);
+});
+
 test("health, packages, and static protections", async () => {
   const ctx = await start();
   try {
@@ -81,8 +93,11 @@ test("health, packages, and static protections", async () => {
 
     const packages = await api(ctx.base, "GET", "/api/packages");
     assert.equal(packages.data.purchasable, false);
+    assert.equal(packages.data.pricingStatus, "approved");
     assert.equal(packages.data.packages.length, 5);
-    assert.equal(packages.data.packages[0].proposedPrice, "$249");
+    assert.equal(packages.data.packages[0].price, "$249");
+    assert.equal(health.data.payments.pricingStatus, "approved");
+    assert.equal(health.data.payments.livePackageCheckout, false);
 
     const home = await fetch(ctx.base + "/");
     assert.equal(home.status, 200);

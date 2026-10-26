@@ -6,16 +6,13 @@ GitHub Pages for `ericlebeaux-dev/asbs-site` builds `main` and serves it on `www
 
 ## Staging
 
-1. On a host that is not the production Pages site, clone this branch.
-2. Set the variables in `.env.example` in the host environment. Do not commit them.
-3. Run `npm start`, or a process manager that runs `node server/index.js`.
-4. Put TLS in front of it and proxy to `127.0.0.1:8787`, or set `ASBS_HOST=0.0.0.0` only behind a firewall.
-5. Set `ASBS_COOKIE_SECURE=1` when the dashboard is served over HTTPS.
-6. Give reviewers the staging hostname. Ask them not to treat package prices as a live offer.
+The shareable test site is a free Render web service described in `render.yaml` and `docs/STAGING.md`. It deploys branch `cursor/asbs-website-completion-0d43` only. It is not the production domain.
+
+The owner has to sign in to Render and apply that blueprint. No host account was available here, so there is no public staging URL yet. Secrets (`ASBS_DASHBOARD_PASSWORD`, `ASBS_SESSION_SECRET`, and the Google OAuth values) are set in Render’s environment. They are not committed.
+
+The server uses Render’s `PORT` and listens on `0.0.0.0` when `PORT` is set. Local `npm start` still uses `127.0.0.1:8787`.
 
 GitHub Pages alone cannot keep the dashboard password or the Google refresh token safe, and it cannot run `server/`. The HTML can sit on Pages after approval, but scheduling, intake storage, vendor files, and the dashboard need this Node process or a replacement the owner chooses.
-
-There is no public staging URL from this change. Creating one would require a host the owner controls.
 
 ## Backup
 

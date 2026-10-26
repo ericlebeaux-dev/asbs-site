@@ -2,7 +2,7 @@
 
 Command: `npm test` (`node --test test/*.test.js`) on Node v22.23.4.
 
-Result: **17 passed, 0 failed, 0 skipped.**
+Result: **18 passed, 0 failed, 0 skipped.**
 
 ## Automated
 
@@ -18,7 +18,8 @@ Result: **17 passed, 0 failed, 0 skipped.**
 | Vendor PDF stored privately; anonymous download rejected; wrong dashboard password rejected | Passed |
 | Dashboard unavailable until a password is configured | Passed |
 | `/server/app.js`, `/.env`, and path traversal to server code return 404 | Passed |
-| Package page contains the five proposed prices, says they are not for purchase, and has no Stripe link | Passed |
+| Package page shows the five approved prices, says online checkout is off, has no pending-approval label, and has no Stripe link | Passed |
+| Render `PORT` selects the listen port and `0.0.0.0`; a local start with no `PORT` stays on `127.0.0.1:8787` | Passed |
 | Internal links and in-page anchors resolve | Passed |
 | Client HTML/JS has no private key, `ya29.` token, or `sk_live_` secret | Passed |
 
@@ -42,7 +43,7 @@ Screenshots of the homepage (desktop and 390px wide), the packages page, and the
 | Check | Result |
 |---|---|
 | Create a real event on the owner's Google Calendar | Blocked. No server OAuth credentials. The owner's calendar was not changed. |
-| Public staging URL | Blocked. GitHub Pages for this repo publishes `main` to the production domain. |
+| Public staging URL | Blocked. `render.yaml` is ready. Deploy needs the owner’s Render account. GitHub Pages still publishes `main` to the production domain and was not changed. |
 | Customer or owner email delivery | Not run. The new forms do not send mail. The existing quote form still posts to FormSubmit and was not submitted. |
 | Stripe charge, package checkout, or subscription | Not run. Not enabled. |
 | Google Analytics hits | Not run. No measurement ID. |

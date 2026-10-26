@@ -12,15 +12,15 @@ export ASBS_SESSION_SECRET='choose-another-long-secret'
 npm start
 ```
 
-Open <http://127.0.0.1:8787/>. The server listens on `127.0.0.1` unless `ASBS_HOST` is set. Copy `.env.example` for the full list of settings. Do not commit `.env` or the `data/` directory.
+Open <http://127.0.0.1:8787/>. The server listens on `127.0.0.1` unless `ASBS_HOST` is set. On Render it uses the `PORT` Render provides and listens on `0.0.0.0`. Copy `.env.example` for the full list of settings. Do not commit `.env` or the `data/` directory.
 
 `npm test` runs the Node test suite. It does not call Google and it does not send email.
 
 ## What is intentionally off
 
-- Consulting package checkout. Proposed prices are labeled pending owner approval.
+- Consulting package checkout. The five package prices are approved. Online checkout stays off. Paid work starts only after a written agreement.
 - Customer email invitations. Calendar events, when credentials exist, are created with `sendUpdates=none` and without attendees.
 - Google Analytics, until `ASBS_GA_MEASUREMENT_ID` is a real `G-` id in `assets/js/config.js`.
 - Writing to Google Calendar, until the owner sets the OAuth variables in `.env.example` on the server.
 
-See `docs/DEPLOYMENT.md` and `docs/OWNER_APPROVAL_CHECKLIST.md`.
+See `docs/STAGING.md`, `docs/GOOGLE_CALENDAR_SETUP.md`, `docs/DEPLOYMENT.md`, and `docs/OWNER_APPROVAL_CHECKLIST.md`.
