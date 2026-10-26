@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Private dashboard | ASBS</title>
+<meta name="description" content="Private ASBS operating dashboard. Sign-in required.">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="assets/js/config.js"></script>
+<script>tailwind.config={theme:{extend:{colors:{asbs:{navy:'#0A192F',gold:'#C69214',teal:'#0E7490',tealLight:'#E6F6F8'}},fontFamily:{sans:['Inter','sans-serif']}}}}</script>
+<style>:focus-visible{outline:3px solid #0E7490;outline-offset:2px}</style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:bg-white focus:px-3 focus:py-2">Skip to content</a>
+<header class="bg-asbs-navy text-white"><div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between"><a href="index.html" class="font-extrabold">ASBS private dashboard</a><button type="button" id="logoutButton" class="text-sm underline">Sign out</button></div></header>
+<main id="main" class="max-w-6xl mx-auto px-4 py-8">
+  <section id="loginPanel" class="max-w-md bg-white border border-slate-200 rounded-2xl p-6">
+    <h1 class="text-2xl font-extrabold text-asbs-navy">Sign in</h1>
+    <p class="mt-2 text-sm text-slate-600">This page shows lead and booking records stored on the ASBS server. It is not public. The password is set on the server, not in the website code. Google Analytics and Stripe are not connected, so missing charts stay empty.</p>
+    <div id="formAlert" class="mt-4" hidden role="alert"></div>
+    <form id="loginForm" class="mt-4 grid gap-3">
+      <label class="text-sm font-semibold">Dashboard password<input id="password" name="password" type="password" autocomplete="current-password" required class="mt-1 w-full border rounded-lg p-2.5"></label>
+      <button type="submit" class="bg-asbs-navy text-white font-bold py-3 rounded-lg">Open dashboard</button>
+    </form>
+  </section>
+  <section id="dashContent" hidden></section>
+</main>
+<script src="assets/js/asbs.js"></script>
+<script src="assets/js/dashboard.js"></script>
+</body>
+</html>

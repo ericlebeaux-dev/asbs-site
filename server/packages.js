@@ -1,0 +1,150 @@
+/** Proposed packages. Not a live offer and not purchasable until the owner approves. */
+export const PRICING_STATUS = "proposed_pending_owner_approval";
+
+export const PACKAGES = [
+  {
+    id: "quick-bid-review",
+    name: "Quick Bid Review",
+    proposedPrice: "$249",
+    priceNote: "One solicitation. This is a paid written review, not a charge for the free introductory call.",
+    customer: "A business that already has one solicitation and wants a documented bid or no-bid recommendation before spending time on a response.",
+    deliverables: [
+      "Review of one solicitation the customer provides (RFP, RFQ, or IFB), up to 50 pages.",
+      "A written bid or no-bid recommendation with the reasons.",
+      "A short list of obvious gaps between the solicitation and the materials the customer provides.",
+      "One round of clarification questions.",
+    ],
+    limitations: [
+      "Does not include writing or submitting a proposal.",
+      "Does not include calling the buying agency.",
+      "Solicitations over 50 pages, amendments after delivery, or a second solicitation are out of scope and require a separate written quote.",
+      "Does not guarantee that a bid would be responsive, responsible, or awarded.",
+    ],
+    delivery: "Proposed: 3 business days after ASBS has the solicitation and the completed intake. The owner must confirm this timeline before it is promised to a customer.",
+    customerResponsibilities: [
+      "Provide the solicitation and any amendments.",
+      "Provide accurate information about registrations, certifications, and past work the customer wants considered.",
+      "Answer clarification questions within 2 business days.",
+    ],
+    upgrade: "Contractor Starter, or a separately quoted proposal-support engagement.",
+    consultationType: "quick_bid_preview_30",
+  },
+  {
+    id: "contractor-starter",
+    name: "Contractor Starter",
+    proposedPrice: "$599",
+    priceNote: "A defined readiness package. Not an open-ended consulting retainer.",
+    customer: "A small business preparing to pursue government work and wanting a clear starting checklist.",
+    deliverables: [
+      "A readiness checklist covering SAM.gov and the state or local registrations the customer says they care about, based only on documents the customer provides.",
+      "A NAICS and NIGP discussion with codes for the customer to confirm. This is not an official classification determination.",
+      "An outline the customer can use to edit their own capability statement.",
+      "One 45-minute working session.",
+    ],
+    limitations: [
+      "ASBS does not submit SAM.gov or other registrations on the customer's behalf under this package.",
+      "Does not include proposal writing, opportunity searching, or bid reviews.",
+      "Does not guarantee any certification or agency approval.",
+      "Passwords and login codes are not collected.",
+    ],
+    delivery: "Proposed: 10 business days after intake is complete. The owner must confirm this timeline.",
+    customerResponsibilities: [
+      "Complete intake and provide the registrations and narrative the customer wants reviewed.",
+      "The customer remains the owner of every government account.",
+      "Make the business decisions ASBS cannot make for them.",
+    ],
+    upgrade: "Registration Accelerator.",
+    consultationType: "qualified_30",
+  },
+  {
+    id: "registration-accelerator",
+    name: "Registration Accelerator",
+    proposedPrice: "$1,299",
+    priceNote: "Guided preparation for registrations the customer submits. Agency fees are extra and are not included.",
+    customer: "A business that is ready to prepare SAM.gov and one state or local vendor registration and wants a document review before the customer submits.",
+    deliverables: [
+      "A preparation checklist for SAM.gov.",
+      "A preparation checklist for one state or local registry the customer selects.",
+      "Review of drafts the customer prepares, up to two review cycles.",
+      "A NAICS and NIGP worksheet for the customer to confirm.",
+      "Two working sessions of up to 45 minutes each.",
+    ],
+    limitations: [
+      "The customer submits their own registrations and remains the account owner.",
+      "ASBS does not store government usernames, passwords, or one-time codes.",
+      "Government processing time and agency decisions are outside this scope.",
+      "Agency fees, if any, are the customer's responsibility.",
+      "Does not guarantee approval, activation, or a contract award.",
+      "Additional registries are quoted separately.",
+    ],
+    delivery: "Proposed: 15 business days of ASBS preparation after intake. Clocks inside an agency are not part of that count. The owner must confirm this timeline.",
+    customerResponsibilities: [
+      "Provide accurate business information and supporting documents they are comfortable sharing.",
+      "Redact Social Security numbers before sending any form.",
+      "Complete the customer's own submissions.",
+    ],
+    upgrade: "Full-Service Contractor Launch.",
+    consultationType: "qualified_30",
+  },
+  {
+    id: "contractor-launch",
+    name: "Full-Service Contractor Launch",
+    proposedPrice: "$2,499",
+    priceNote: "A capped launch engagement. It is not unlimited capture or proposal writing.",
+    customer: "A business that wants a structured first month of public-sector selling after the free consultation.",
+    deliverables: [
+      "Everything in Registration Accelerator.",
+      "Screening of up to 10 publicly posted opportunities identified during the engagement.",
+      "A bid or no-bid recommendation on up to 3 of those opportunities.",
+      "One capability-statement draft for the customer to edit and approve.",
+      "A 30-day action plan.",
+    ],
+    limitations: [
+      "Opportunity screening stops at 10 notices. Bid or no-bid stops at 3.",
+      "Full proposal writing, pricing models, and submission to an agency are not included.",
+      "Does not include bonding, financing, insurance placement, or legal review.",
+      "Does not guarantee a contract award, a certification, or agency approval.",
+    ],
+    delivery: "Proposed: 30 business days after intake. The owner must confirm this timeline.",
+    customerResponsibilities: [
+      "Provide timely documents and decisions.",
+      "Confirm that any past-performance statements are accurate.",
+      "Submit any registration or bid in the customer's own name.",
+    ],
+    upgrade: "Contracting Growth Partner, after the owner approves monthly terms.",
+    consultationType: "onboarding_45",
+  },
+  {
+    id: "growth-partner",
+    name: "Contracting Growth Partner",
+    proposedPrice: "$999–$2,499/month",
+    priceNote: "A proposed monthly range. The owner has not approved which tasks sit at which price. No subscription will be billed.",
+    customer: "A business that wants ongoing, capped support after a launch engagement.",
+    deliverables: [
+      "A monthly pipeline review.",
+      "Screening of up to 15 publicly posted opportunities in the month.",
+      "A bid or no-bid recommendation on up to 4 of those opportunities.",
+      "One monthly consultation of up to 45 minutes.",
+      "A short written recap of recommended next actions.",
+    ],
+    limitations: [
+      "Work stops at the monthly caps above. Extra notices, proposals, and meetings are quoted separately.",
+      "Proposal writing, registration submission, travel, and agency calls are excluded unless a written scope adds them.",
+      "Either party would be able to stop at the end of a month once terms exist. No automatic renewal will be turned on with this website.",
+      "Does not guarantee awards, certifications, financing, or agency approval.",
+      "Not available for purchase, and no recurring charge will be created, until the owner approves terms.",
+    ],
+    delivery: "Proposed monthly cycle. The owner must approve the price, the cap, and the cancellation terms before a customer is billed.",
+    customerResponsibilities: [
+      "Name a decision maker who can answer within the month.",
+      "Keep registrations and representations accurate.",
+      "Approve any external submission before it is sent.",
+    ],
+    upgrade: "A separately quoted project if a specific proposal needs to be written.",
+    consultationType: "onboarding_45",
+  },
+];
+
+export function packageById(id) {
+  return PACKAGES.find((item) => item.id === id) || null;
+}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vendor and Teaming Registration | ASBS</title>
+<meta name="description" content="Prospective suppliers and subcontractors can privately register capabilities with American Standard Business Solutions. Registration does not guarantee subcontracting work.">
+<link rel="canonical" href="https://www.americanstandardbusinesssolutions.com/vendors.html">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="assets/js/config.js"></script>
+<script>tailwind.config={theme:{extend:{colors:{asbs:{navy:'#0A192F',gold:'#C69214',teal:'#0E7490',tealLight:'#E6F6F8'}},fontFamily:{sans:['Inter','sans-serif']}}}}</script>
+<style>.gold-gradient{background:linear-gradient(135deg,#D4AF37 0%,#C69214 50%,#9A6F09 100%)}:focus-visible{outline:3px solid #0E7490;outline-offset:2px}</style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[80] focus:bg-white focus:px-3 focus:py-2">Skip to content</a>
+<div id="envBanner" class="hidden bg-amber-100 text-amber-950 text-center text-sm px-4 py-2" role="status"></div>
+<header class="bg-asbs-navy text-white"><div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between"><a href="index.html" class="flex items-center gap-3 font-extrabold"><img src="assets/logo.png" alt="American Standard Business Solutions logo" class="w-12 h-12 rounded-full">American Standard</a><nav class="hidden xl:flex gap-5 text-sm" aria-label="Main"><a href="services.html">Services</a><a href="packages.html">Consulting</a><a href="about.html">About</a><a href="vendors.html" class="text-asbs-gold">Vendors</a><a href="contact.html">Contact</a><a href="consult.html" class="gold-gradient text-asbs-navy font-bold px-3 py-2 rounded-lg">Free Consultation</a></nav><button type="button" class="xl:hidden p-2" data-menu-button aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu"><i data-lucide="menu"></i></button></div><div id="mobileMenu" class="hidden px-4 pb-4 flex flex-col gap-3 text-sm" data-mobile-menu><a href="services.html">Services</a><a href="packages.html">Consulting</a><a href="about.html">About</a><a href="contact.html">Contact</a><a href="consult.html">Free Consultation</a></div></header>
+<main id="main" class="max-w-3xl mx-auto px-4 py-12">
+  <h1 class="text-4xl font-extrabold text-asbs-navy">Vendor and teaming registration</h1>
+  <p class="mt-4 text-slate-600">Suppliers and subcontractors can share capability information with ASBS. Submissions are private. They are not posted on this website. Registering does not guarantee subcontracting work, a teaming agreement, or a contract award.</p>
+  <p class="mt-3 text-sm">If you upload a W-9, certificate of insurance, or license, redact any Social Security number first. PDF, PNG, or JPEG, up to 4 MB. ASBS does not ask for passwords or bank account numbers.</p>
+  <div id="formAlert" class="mt-4" hidden role="alert"></div>
+  <form id="vendorForm" class="mt-6 bg-white border border-slate-200 rounded-2xl p-6 grid gap-4">
+    <label class="text-sm font-semibold">Legal business name *<input name="legalName" required class="mt-1 w-full border rounded-lg p-2.5"></label>
+    <label class="text-sm font-semibold">Primary contact *<input name="contactName" required class="mt-1 w-full border rounded-lg p-2.5"></label>
+    <div class="grid sm:grid-cols-2 gap-4"><label class="text-sm font-semibold">Email *<input type="email" name="email" required class="mt-1 w-full border rounded-lg p-2.5"></label><label class="text-sm font-semibold">Phone *<input type="tel" name="phone" required class="mt-1 w-full border rounded-lg p-2.5"></label></div>
+    <label class="text-sm font-semibold">Services offered *<textarea name="services" required rows="3" class="mt-1 w-full border rounded-lg p-2.5"></textarea></label>
+    <label class="text-sm font-semibold">Geographic coverage *<input name="coverage" required class="mt-1 w-full border rounded-lg p-2.5"></label>
+    <div class="grid sm:grid-cols-2 gap-4"><label class="text-sm font-semibold">NAICS codes<input name="naics" class="mt-1 w-full border rounded-lg p-2.5"></label><label class="text-sm font-semibold">NIGP codes<input name="nigp" class="mt-1 w-full border rounded-lg p-2.5"></label></div>
+    <label class="text-sm font-semibold">Certifications<textarea name="certifications" rows="2" class="mt-1 w-full border rounded-lg p-2.5"></textarea></label>
+    <label class="text-sm font-semibold">Registrations<textarea name="registrations" rows="2" class="mt-1 w-full border rounded-lg p-2.5"></textarea></label>
+    <label class="text-sm font-semibold">Equipment and operational capacity<textarea name="equipment" rows="2" class="mt-1 w-full border rounded-lg p-2.5"></textarea></label>
+    <label class="text-sm font-semibold">Relevant experience<textarea name="experience" rows="3" class="mt-1 w-full border rounded-lg p-2.5"></textarea></label>
+    <label class="text-sm font-semibold">References<textarea name="references" rows="2" class="mt-1 w-full border rounded-lg p-2.5"></textarea></label>
+    <label class="text-sm font-semibold">Insurance<textarea name="insurance" rows="2" class="mt-1 w-full border rounded-lg p-2.5"></textarea></label>
+    <label class="text-sm font-semibold">Bonding<input name="bonding" class="mt-1 w-full border rounded-lg p-2.5"></label>
+    <label class="text-sm font-semibold">Licenses<textarea name="licenses" rows="2" class="mt-1 w-full border rounded-lg p-2.5"></textarea></label>
+    <fieldset><legend class="text-sm font-semibold">Interest in future teaming opportunities *</legend><label class="mt-2 flex gap-2 text-sm"><input type="radio" name="teamingInterest" value="yes" required> Yes</label><label class="mt-2 flex gap-2 text-sm"><input type="radio" name="teamingInterest" value="later"> Maybe later</label><label class="mt-2 flex gap-2 text-sm"><input type="radio" name="teamingInterest" value="no"> No</label></fieldset>
+    <label class="text-sm font-semibold">Optional supporting document<input type="file" name="documentFile" accept="application/pdf,image/png,image/jpeg" class="mt-1 w-full text-sm"></label>
+    <label class="text-sm font-semibold">Notes<textarea name="notes" rows="2" class="mt-1 w-full border rounded-lg p-2.5"></textarea></label>
+    <label class="flex gap-2 text-sm"><input type="checkbox" name="consent" required> I agree ASBS may store this registration privately and contact me. I understand it does not promise work.</label>
+    <div class="absolute -left-[9999px]" aria-hidden="true"><label>Company URL<input name="company_url" tabindex="-1" autocomplete="off"></label></div>
+    <button type="submit" class="gold-gradient text-asbs-navy font-bold py-3 rounded-lg">Submit private registration</button>
+  </form>
+</main>
+<footer class="bg-asbs-navy text-slate-300"><div class="max-w-7xl mx-auto px-4 py-8 text-sm"><a class="hover:text-asbs-gold" href="tel:+12819545167">(281) 954-5167</a> · <a class="hover:text-asbs-gold" href="privacy.html">Privacy</a></div></footer>
+<script src="assets/js/asbs.js"></script>
+<script src="assets/js/forms.js"></script>
+</body>
+</html>
