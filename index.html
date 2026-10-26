@@ -18,6 +18,15 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>tailwind.config={theme:{extend:{colors:{asbs:{navy:'#1F2326',navyLight:'#2B3035',gold:'#C69214',goldLight:'#FBF4E4',teal:'#5B6B7A',tealLight:'#F1F1EE',green:'#2F7D4F',greenLight:'#ECF7EF',sky:'#3D5A80',skyLight:'#F3F4F6',cream:'#FFFAF0'}},fontFamily:{sans:['Inter','sans-serif']}}}}</script>
 <style>.gold-gradient{background:linear-gradient(135deg,#D4AF37 0%,#C69214 50%,#9A6F09 100%)}
+.slogan{display:flex;flex-wrap:wrap;align-items:center;color:#D4AF37;font-weight:600;text-transform:uppercase}
+.slogan span{display:inline-flex;align-items:center;flex:none}
+.slogan span:not(:last-child)::after{content:"";width:1px;align-self:center;background:#F6E3A1;flex:none}
+.slogan-hero{margin-top:1.15rem;font-size:.92rem;letter-spacing:.18em;line-height:1.5}
+.slogan-hero span:not(:last-child)::after{height:.85em;margin:0 .8em}
+.slogan-band{justify-content:center;flex-wrap:nowrap;padding:.65rem 1rem;font-size:clamp(.58rem,2.15vw,.78rem);letter-spacing:clamp(.1em,1.5vw,.32em);white-space:nowrap;border-top:1px solid rgba(212,175,55,.7);background:#1F2326}
+.slogan-band span:not(:last-child)::after{height:.8em;margin:0 clamp(.45em,1.6vw,.95em)}
+@media(max-width:420px){.slogan-hero{font-size:.72rem;letter-spacing:.11em}.slogan-hero span:not(:last-child)::after{margin:0 .5em}}
+@media(max-width:340px){.slogan-hero{flex-wrap:nowrap;font-size:.66rem;letter-spacing:.06em}.slogan-hero span:not(:last-child)::after{margin:0 .38em}}
 @media print{body *{visibility:hidden}#capStmt,#capStmt *{visibility:visible}#capStmt{position:absolute;left:0;top:0;width:100%}.no-print{display:none!important}}</style>
 </head>
 <body class="bg-stone-50 text-slate-800 font-sans antialiased">
@@ -51,6 +60,7 @@
     <div>
       <p class="text-asbs-gold font-semibold uppercase tracking-widest text-xs mb-4">Government &amp; Commercial B2B · Katy, Texas</p>
       <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight">Mission-Ready Supplies &amp; Facility Support Services</h1>
+      <p class="slogan slogan-hero" aria-label="People, Process, Solutions, Results"><span>People</span><span>Process</span><span>Solutions</span><span>Results</span></p>
       <p class="mt-6 text-lg text-slate-300 max-w-xl">Office, janitorial, paper, and cleaning supplies shipped nationwide, plus janitorial, pressure washing, and facility support services across Houston and Dallas-Fort Worth, plus government contracting consulting and teaming support for other businesses. One accountable vendor, with direct access to the owner.</p>
       <div class="mt-8 flex flex-wrap gap-4">
         <a href="#quote" class="gold-gradient text-asbs-navy font-bold px-6 py-3 rounded-lg inline-flex hover:brightness-110 hover:shadow-lg transition items-center gap-2"><i data-lucide="file-text" class="w-5 h-5"></i>Request a Quote</a>
@@ -233,6 +243,7 @@
     </div>
   </div>
   <div class="border-t border-slate-700 py-4 text-center text-xs">© 2023-2026 American Standard Business Solutions, LLC. All rights reserved.<br><span class="text-slate-400">Photos: Tima Miroshnichenko, Caleb Oquendo, Kampus Production, José Andrés Pacheco Cortes, EqualStock IN, and Matthew Jesús via <a href="https://www.pexels.com/license/" class="underline">Pexels (free license)</a>. Photos are illustrative.</span></div>
+  <p class="slogan slogan-band" aria-label="People, Process, Solutions, Results"><span>People</span><span>Process</span><span>Solutions</span><span>Results</span></p>
 </footer>
 
 <div id="capModal" class="hidden fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="capTitle">
