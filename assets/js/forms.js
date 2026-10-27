@@ -2,14 +2,15 @@
   function watchIntake() {
     var form = document.getElementById("intakeForm");
     if (!form) return;
-    var packages = ["quick-bid-review", "contractor-starter", "registration-accelerator", "contractor-launch", "growth-partner"];
+    var packages = ["free-consultation", "bid-readiness-assessment", "quick-bid-review", "sam-registration-prep", "registration-bundle", "certification-support", "contractor-launch", "monitor", "starter-bid", "growth", "full-capture"];
+    var paidPackages = packages.filter(function (id) { return id !== "free-consultation"; });
     function sync() {
       var levels = Array.prototype.map.call(form.querySelectorAll('input[name="contractingLevel"]:checked'), function (item) { return item.value; });
       var registration = document.getElementById("registrationFields");
       if (registration) registration.hidden = !levels.some(function (level) { return level === "federal" || level === "state" || level === "local"; });
       var budget = document.getElementById("budgetWrap");
       var interest = form.querySelector("[name=serviceInterest]");
-      if (budget && interest) budget.hidden = packages.indexOf(interest.value) === -1;
+      if (budget && interest) budget.hidden = paidPackages.indexOf(interest.value) === -1;
     }
     form.addEventListener("change", sync);
     sync();
@@ -20,6 +21,7 @@
       window.ASBS.showMessage(alert, "");
       var body = window.ASBS.formData(form);
       body.consent = body.consent === true;
+      if (packages.indexOf(body.serviceInterest) !== -1) body.packageId = body.serviceInterest;
       var button = form.querySelector("[type=submit]");
       button.disabled = true;
       try {

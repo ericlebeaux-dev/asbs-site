@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { PACKAGES } from "../server/packages.js";
+import { SERVICE_INTERESTS } from "../server/validate.js";
 
 const root = path.resolve(".");
 const htmlFiles = fs.readdirSync(root).filter((file) => file.endsWith(".html"));
@@ -59,6 +60,42 @@ test("approved package prices are shown and checkout stays off", () => {
   assert.equal(/Proposed \$/.test(html), false);
   assert.equal(html.includes("buy.stripe.com"), false);
   assert.equal(html.includes("sk_live"), false);
+});
+
+test("consultation and intake forms offer the current packages", () => {
+  const retired = [
+    "contractor-starter",
+    "registration-accelerator",
+    "growth-partner",
+    "Contractor Starter",
+    "Registration Accelerator",
+    "Full-Service Contractor Launch",
+    "Contracting Growth Partner",
+    "five consulting packages",
+  ];
+  const surfaces = ["consult.html", "intake.html", "services.html", "assets/js/forms.js", "assets/js/consult.js", "server/validate.js"];
+  for (const file of surfaces) {
+    const text = read(file);
+    for (const name of retired) {
+      assert.equal(text.includes(name), false, `${file} still lists ${name}`);
+    }
+  }
+  for (const file of ["consult.html", "intake.html"]) {
+    const html = read(file);
+    for (const item of PACKAGES) {
+      assert.equal(html.includes(`<option value="${item.id}">${item.name}</option>`), true, `${file} ${item.name}`);
+    }
+  }
+  const forms = read("assets/js/forms.js");
+  const consult = read("assets/js/consult.js");
+  for (const item of PACKAGES) {
+    assert.equal(SERVICE_INTERESTS.includes(item.id), true, item.id);
+    assert.equal(forms.includes(`"${item.id}"`), true, `forms.js ${item.id}`);
+    assert.equal(consult.includes(`"${item.id}": "${item.consultationType}"`), true, `consult.js ${item.id}`);
+  }
+  for (const retiredId of ["contractor-starter", "registration-accelerator", "growth-partner"]) {
+    assert.equal(SERVICE_INTERESTS.includes(retiredId), false, retiredId);
+  }
 });
 
 test("consultation page lists every free appointment type", () => {

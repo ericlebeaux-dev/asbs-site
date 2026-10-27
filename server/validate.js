@@ -1,3 +1,5 @@
+import { PACKAGES } from "./packages.js";
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BANNED_KEYS = [
   "ssn",
@@ -20,12 +22,8 @@ const BANNED_KEYS = [
 ];
 
 export const SERVICE_INTERESTS = [
+  ...PACKAGES.map((item) => item.id),
   "contracting-readiness",
-  "quick-bid-review",
-  "contractor-starter",
-  "registration-accelerator",
-  "contractor-launch",
-  "growth-partner",
   "procurement-consulting",
   "supply-chain",
   "operations",

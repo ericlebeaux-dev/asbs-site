@@ -1,4 +1,17 @@
 (function () {
+  var PACKAGE_TYPES = {
+    "free-consultation": "discovery_15",
+    "bid-readiness-assessment": "qualified_30",
+    "quick-bid-review": "quick_bid_preview_30",
+    "sam-registration-prep": "qualified_30",
+    "registration-bundle": "qualified_30",
+    "certification-support": "qualified_30",
+    "contractor-launch": "onboarding_45",
+    "monitor": "onboarding_45",
+    "starter-bid": "onboarding_45",
+    "growth": "onboarding_45",
+    "full-capture": "onboarding_45"
+  };
   var selectedType = "discovery_15";
   var selectedStart = "";
   var confirmation = null;
@@ -137,7 +150,12 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     var params = new URLSearchParams(location.search);
-    if (params.get("package") === "quick-bid-review") selectedType = "quick_bid_preview_30";
+    var requestedPackage = params.get("package") || "";
+    if (PACKAGE_TYPES[requestedPackage]) {
+      selectedType = PACKAGE_TYPES[requestedPackage];
+      var interest = document.querySelector("#bookingForm [name=serviceInterest]");
+      if (interest) interest.value = requestedPackage;
+    }
     document.querySelectorAll("[data-type]").forEach(function (button) {
       button.addEventListener("click", function () { setType(button.getAttribute("data-type")); });
     });
@@ -181,7 +199,7 @@
       body.type = selectedType;
       body.start = selectedStart;
       body.consent = body.consent === true;
-      if (body.serviceInterest === "quick-bid-review") body.packageId = "quick-bid-review";
+      if (PACKAGE_TYPES[body.serviceInterest]) body.packageId = body.serviceInterest;
       var button = event.currentTarget.querySelector("[type=submit]");
       button.disabled = true;
       try {
