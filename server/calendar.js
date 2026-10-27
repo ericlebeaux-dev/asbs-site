@@ -56,7 +56,7 @@ export function calendarFromEnv(env = process.env, fetchImpl = globalThis.fetch)
         url.searchParams.set("orderBy", "startTime");
         url.searchParams.set("maxResults", "250");
         url.searchParams.set("fields", "items(status,transparency,start,end,eventType),nextPageToken");
-        for (const eventType of ["default", "outOfOffice", "focusTime"]) {
+        for (const eventType of ["default", "fromGmail", "outOfOffice", "focusTime"]) {
           url.searchParams.append("eventTypes", eventType);
         }
         if (pageToken) url.searchParams.set("pageToken", pageToken);
@@ -115,9 +115,17 @@ export function calendarFromEnv(env = process.env, fetchImpl = globalThis.fetch)
   };
 }
 
+function isGmailEvent(item) {
+  // Gmail events use eventType "fromGmail". The Events resource has no fromGmail
+  // field; asking for one makes events.list fail. A payload that still sets the
+  // flag is treated as busy.
+  return item.eventType === "fromGmail" || Boolean(item.fromGmail);
+}
+
 function busyInterval(item) {
-  if (!item || item.status === "cancelled" || item.transparency === "transparent") return null;
+  if (!item || item.status === "cancelled") return null;
   if (item.eventType === "workingLocation" || item.eventType === "birthday") return null;
+  if (item.transparency === "transparent" && !isGmailEvent(item)) return null;
   let start;
   let end;
   if (item.start?.dateTime && item.end?.dateTime) {

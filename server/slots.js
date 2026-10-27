@@ -1,9 +1,9 @@
 import { TIME_ZONE, addDaysYmd, zonedParts, zonedTimeToUtc, zonedToday } from "./time.js";
 
-/** Monday–Friday windows, America/Chicago, from the owner brief. */
+/** Monday, Wednesday, and Friday only. America/Chicago. */
 export const WINDOWS = [
   { start: 9 * 60, end: 11 * 60 },
-  { start: 13 * 60, end: 15 * 60 },
+  { start: 13 * 60, end: 16 * 60 },
 ];
 
 export const STEP_MINUTES = 15;
@@ -111,7 +111,7 @@ export function generateSlots({
     if (ymdNumber(ymd) < ymdNumber(today) || ymdNumber(ymd) > ymdNumber(horizonLast)) continue;
     const noon = zonedTimeToUtc(ymd.year, ymd.month, ymd.day, 12, 0, timeZone);
     const parts = zonedParts(noon, timeZone);
-    if (parts.weekday === "Sat" || parts.weekday === "Sun") continue;
+    if (parts.weekday !== "Mon" && parts.weekday !== "Wed" && parts.weekday !== "Fri") continue;
 
     for (const window of WINDOWS) {
       for (let minuteOfDay = window.start; minuteOfDay + type.minutes <= window.end; minuteOfDay += STEP_MINUTES) {

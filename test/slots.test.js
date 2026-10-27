@@ -18,13 +18,15 @@ test("slots stay inside weekday consultation windows", () => {
   for (const slot of slots) {
     const start = zonedParts(new Date(slot.start));
     const end = zonedParts(new Date(slot.end));
-    assert.equal(["Sat", "Sun"].includes(start.weekday), false);
+    assert.equal(["Mon", "Wed", "Fri"].includes(start.weekday), true);
     const startMin = start.hour * 60 + start.minute;
     const endMin = end.hour * 60 + end.minute;
     const inMorning = startMin >= 9 * 60 && endMin <= 11 * 60;
-    const inAfternoon = startMin >= 13 * 60 && endMin <= 15 * 60;
+    const inAfternoon = startMin >= 13 * 60 && endMin <= 16 * 60;
     assert.equal(inMorning || inAfternoon, true);
   }
+  assert.equal(slots.some((slot) => slot.start === "2026-10-28T20:45:00.000Z"), true);
+  assert.equal(slots.some((slot) => slot.start === "2026-10-28T21:00:00.000Z"), false);
 });
 
 test("a 45-minute consultation cannot run past the window", () => {
@@ -36,26 +38,29 @@ test("a 45-minute consultation cannot run past the window", () => {
     bufferMinutes: 0,
     busy: [],
   });
-  const morning = slots.filter((slot) => slot.start.startsWith("2026-10-27T14") || slot.start.startsWith("2026-10-27T15"));
-  assert.equal(morning.at(-1).start, "2026-10-27T15:15:00.000Z");
-  assert.equal(morning.some((slot) => slot.start === "2026-10-27T15:30:00.000Z"), false);
+  const morning = slots.filter((slot) => slot.start.startsWith("2026-10-28T14") || slot.start.startsWith("2026-10-28T15"));
+  assert.equal(morning.at(-1).start, "2026-10-28T15:15:00.000Z");
+  assert.equal(morning.some((slot) => slot.start === "2026-10-28T15:30:00.000Z"), false);
+  assert.equal(slots.some((slot) => slot.start === "2026-10-28T20:15:00.000Z"), true);
+  assert.equal(slots.some((slot) => slot.start === "2026-10-28T20:30:00.000Z"), false);
 });
 
 test("a year-long busy block does not hide real openings", () => {
   const now = new Date("2026-10-26T12:00:00.000Z");
   const yearLong = [{ start: new Date("2026-01-21T06:41:43.000Z"), end: new Date("2026-12-31T21:41:00.000Z") }];
   const open = generateSlots({ now, days: 8, typeId: "discovery_15", minNoticeHours: 24, bufferMinutes: 15, busy: yearLong });
-  assert.equal(open.some((slot) => slot.start === "2026-10-27T14:00:00.000Z"), true);
-  const meeting = [{ start: new Date("2026-10-27T14:00:00.000Z"), end: new Date("2026-10-27T14:30:00.000Z") }];
+  assert.equal(open.some((slot) => slot.start === "2026-10-28T14:00:00.000Z"), true);
+  const meeting = [{ start: new Date("2026-10-28T14:00:00.000Z"), end: new Date("2026-10-28T14:30:00.000Z") }];
   const blocked = generateSlots({ now, days: 8, typeId: "discovery_15", minNoticeHours: 24, bufferMinutes: 15, busy: meeting });
-  assert.equal(blocked.some((slot) => slot.start === "2026-10-27T14:00:00.000Z"), false);
-  assert.equal(blocked.some((slot) => slot.start === "2026-10-27T18:00:00.000Z"), true);
+  assert.equal(blocked.some((slot) => slot.start === "2026-10-28T14:00:00.000Z"), false);
+  assert.equal(blocked.some((slot) => slot.start === "2026-10-28T18:00:00.000Z"), true);
 });
 
 test("slots reach 365 days ahead and stay inside one requested month", () => {
   const now = new Date("2026-10-26T12:00:00.000Z");
   const year = generateSlots({ now, days: HORIZON_DAYS + 1, typeId: "discovery_15", minNoticeHours: 24, bufferMinutes: 0, busy: [] });
-  assert.equal(year.some((slot) => slot.start.startsWith("2027-10-26")), true);
+  assert.equal(year.some((slot) => slot.start.startsWith("2027-10-25")), true);
+  assert.equal(year.some((slot) => slot.start.startsWith("2027-10-26")), false);
   assert.equal(year.some((slot) => slot.start.startsWith("2027-10-27")), false);
   const november = generateSlots({ now, month: { year: 2026, month: 11 }, typeId: "discovery_15", minNoticeHours: 24, bufferMinutes: 0, busy: [] });
   assert.ok(november.length > 0);
@@ -65,6 +70,23 @@ test("slots reach 365 days ahead and stay inside one requested month", () => {
   }
   const tooFar = generateSlots({ now, month: { year: 2027, month: 11 }, typeId: "discovery_15", minNoticeHours: 0, bufferMinutes: 0, busy: [] });
   assert.equal(tooFar.length, 0);
+});
+
+test("Tuesday, Thursday, and the weekend have no consultation slots", () => {
+  const slots = generateSlots({
+    now: new Date("2026-10-26T12:00:00.000Z"),
+    month: { year: 2026, month: 11 },
+    typeId: "discovery_15",
+    minNoticeHours: 0,
+    bufferMinutes: 0,
+    busy: [],
+  });
+  const weekdays = new Set(slots.map((slot) => zonedParts(new Date(slot.start)).weekday));
+  assert.deepEqual([...weekdays].sort(), ["Fri", "Mon", "Wed"]);
+  assert.equal(slots.some((slot) => {
+    const parts = zonedParts(new Date(slot.start));
+    return parts.month === 11 && parts.day === 3;
+  }), false);
 });
 
 test("Sunday has no consultation slots", () => {

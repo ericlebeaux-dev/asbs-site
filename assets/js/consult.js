@@ -63,7 +63,7 @@
       host.innerHTML = "<p class=\"text-sm text-slate-600\">No open times in " + monthTitle(month) + ". Use the month buttons to check another month, or call (281) 954-5167.</p>";
       return;
     }
-    summary.textContent = slots.length + " open time" + (slots.length === 1 ? "" : "s") + " in " + monthTitle(month) + ". Weekdays, 9:00–11:00 a.m. and 1:00–3:00 p.m. Central.";
+    summary.textContent = slots.length + " open time" + (slots.length === 1 ? "" : "s") + " in " + monthTitle(month) + ". Monday, Wednesday, and Friday, 9:00–11:00 a.m. and 1:00–4:00 p.m. Central.";
     var groups = {};
     slots.forEach(function (slot) {
       var label = new Intl.DateTimeFormat("en-US", {

@@ -79,6 +79,7 @@ test("calendar busy list keeps meetings and skips year-long or free events", asy
     }
     assert.match(String(url), /\/events\?/);
     assert.match(String(url), /singleEvents=true/);
+    assert.match(String(url), /eventTypes=fromGmail/);
     assert.equal(String(url).includes("summary"), false);
     return {
       ok: true,
@@ -102,6 +103,45 @@ test("calendar busy list keeps meetings and skips year-long or free events", asy
             end: { dateTime: "2026-10-28T16:00:00Z" },
           },
           {
+            status: "confirmed",
+            eventType: "fromGmail",
+            transparency: "transparent",
+            start: { dateTime: "2026-11-02T15:00:00Z" },
+            end: { dateTime: "2026-11-02T20:00:00Z" },
+          },
+          {
+            status: "confirmed",
+            fromGmail: true,
+            transparency: "transparent",
+            start: { dateTime: "2026-11-04T15:00:00Z" },
+            end: { dateTime: "2026-11-04T16:00:00Z" },
+          },
+          {
+            status: "cancelled",
+            eventType: "fromGmail",
+            start: { dateTime: "2026-11-04T19:00:00Z" },
+            end: { dateTime: "2026-11-04T20:00:00Z" },
+          },
+          {
+            status: "confirmed",
+            eventType: "workingLocation",
+            start: { dateTime: "2026-10-28T17:00:00Z" },
+            end: { dateTime: "2026-10-28T18:00:00Z" },
+          },
+          {
+            status: "confirmed",
+            eventType: "birthday",
+            start: { date: "2026-10-30" },
+            end: { date: "2026-10-31" },
+          },
+          {
+            status: "confirmed",
+            eventType: "fromGmail",
+            transparency: "transparent",
+            start: { dateTime: "2026-01-01T00:00:00Z" },
+            end: { dateTime: "2026-12-31T00:00:00Z" },
+          },
+          {
             status: "cancelled",
             start: { dateTime: "2026-10-28T18:00:00Z" },
             end: { dateTime: "2026-10-28T18:30:00Z" },
@@ -116,8 +156,11 @@ test("calendar busy list keeps meetings and skips year-long or free events", asy
     GOOGLE_REFRESH_TOKEN: "refresh",
   }, fetchImpl);
   const busy = await calendar.listBusy("2026-10-01T00:00:00.000Z", "2026-11-01T00:00:00.000Z");
-  assert.equal(busy.length, 1);
-  assert.equal(busy[0].start.toISOString(), "2026-10-28T15:00:00.000Z");
+  assert.deepEqual(busy.map((item) => item.start.toISOString()), [
+    "2026-10-28T15:00:00.000Z",
+    "2026-11-02T15:00:00.000Z",
+    "2026-11-04T15:00:00.000Z",
+  ]);
 });
 
 test("calendar client reports when credentials are missing", () => {

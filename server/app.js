@@ -431,7 +431,7 @@ function health(config, calendar, mailer) {
       livePackageCheckout: false,
       pricingStatus: PRICING_STATUS,
     },
-    consultationWindows: ["09:00-11:00 America/Chicago", "13:00-15:00 America/Chicago"],
+    consultationWindows: ["Mon/Wed/Fri 09:00-11:00 America/Chicago", "Mon/Wed/Fri 13:00-16:00 America/Chicago"],
     minimumNoticeHours: config.minNoticeHours,
     bufferMinutes: config.bufferMinutes,
     bookingHorizonDays: HORIZON_DAYS,

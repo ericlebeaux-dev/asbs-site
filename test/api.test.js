@@ -236,7 +236,8 @@ test("connected calendar creates one event and rolls back when creation fails", 
   try {
     const slots = await api(ctx.base, "GET", "/api/slots?type=qualified_30");
     assert.equal(slots.data.slots.some((slot) => slot.start === "2026-10-27T14:00:00.000Z"), false);
-    const start = "2026-10-27T18:00:00.000Z";
+    // Wednesday 1:00 p.m. and 2:00 p.m. Central. Tuesday is no longer offered.
+    const start = "2026-10-28T18:00:00.000Z";
     const booked = await api(ctx.base, "POST", "/api/bookings", {
       ...customer({ email: "meet@example.com" }),
       type: "qualified_30",
@@ -255,7 +256,7 @@ test("connected calendar creates one event and rolls back when creation fails", 
       type: "qualified_30",
       meetingMode: "phone",
       serviceInterest: "supplies",
-      start: "2026-10-27T19:00:00.000Z",
+      start: "2026-10-28T19:00:00.000Z",
     });
     assert.equal(failed.status, 503);
     const again = await api(ctx.base, "GET", "/api/slots?type=qualified_30");
