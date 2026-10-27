@@ -1,0 +1,37 @@
+# Staging only. This file does not change GitHub Pages or the production domain.
+# Apply it from the Render dashboard on branch cursor/asbs-website-completion-0d43.
+# Do not point this service at main, and do not add www.americanstandardbusinesssolutions.com.
+
+services:
+  - type: web
+    name: asbs-staging
+    runtime: node
+    plan: free
+    region: oregon
+    branch: cursor/asbs-website-completion-0d43
+    autoDeployTrigger: commit
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: ASBS_ENV
+        value: staging
+      - key: ASBS_HOST
+        value: 0.0.0.0
+      - key: ASBS_COOKIE_SECURE
+        value: "1"
+      - key: NODE_VERSION
+        value: "22"
+      - key: GOOGLE_CALENDAR_ID
+        value: primary
+      # Render generates this. It is not written into git.
+      - key: ASBS_SESSION_SECRET
+        generateValue: true
+      # The owner types this in the Render form. Do not commit it.
+      - key: ASBS_DASHBOARD_PASSWORD
+        sync: false
+      # Add these later in the Render Environment tab. Leave them out of git.
+      # GOOGLE_CLIENT_ID
+      # GOOGLE_CLIENT_SECRET
+      # GOOGLE_REFRESH_TOKEN is the calendar owner's token. Do not replace it.
+      # GOOGLE_GMAIL_REFRESH_TOKEN is a separate token for americanstandardsolutions@gmail.com.

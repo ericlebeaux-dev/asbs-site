@@ -1,0 +1,13 @@
+{
+  "name": "asbs-site",
+  "private": true,
+  "type": "module",
+  "description": "American Standard Business Solutions website and staging server",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
