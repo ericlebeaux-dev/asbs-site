@@ -1,15 +1,24 @@
-/* Warm paper sections. Navy is the footer and the primary-button color.
-   Gold stays on headings accents, step numbers, and button hover. */
+/* Warm paper sections. Footer and primary buttons use a lighter slate blue.
+   Source Serif 4 for headings, Source Sans 3 for text. Gold plus a brick accent. */
 
 :root {
   --asbs-paper: #f6f3ee;
   --asbs-white: #fffdf9;
   --asbs-ink: #2c2926;
-  --asbs-navy: #0a192f;
+  --asbs-navy: #24527a;
   --asbs-gold: #7a5610;
   --asbs-gold-bright: #fff8ec;
+  --asbs-accent: #9c4221;
   --asbs-charcoal: #322e2a;
   --asbs-line: #e4ddd2;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: "Source Sans 3", "Segoe UI", sans-serif !important;
 }
 
 body {
@@ -17,9 +26,27 @@ body {
   color: var(--asbs-ink);
 }
 
+h1,
+h2,
+h3,
+h4,
+header .font-extrabold {
+  font-family: "Source Serif 4", Georgia, serif !important;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+}
+
+h1 { font-weight: 640 !important; }
+h2 { font-weight: 600 !important; }
+h3,
+h4,
+header .font-extrabold { font-weight: 560 !important; }
+
+html { scrollbar-color: var(--asbs-navy) var(--asbs-paper); }
+
 ::selection {
-  background: #e7d7b0;
-  color: #1a140c;
+  background: #d5e4ef;
+  color: #14344c;
 }
 
 :focus-visible {
@@ -35,8 +62,9 @@ body > .bg-asbs-gold {
 header {
   background-color: var(--asbs-white) !important;
   color: var(--asbs-navy) !important;
+  border-top: 3px solid var(--asbs-accent) !important;
   border-bottom: 1px solid var(--asbs-line) !important;
-  box-shadow: 0 10px 28px rgba(44, 41, 38, 0.05) !important;
+  box-shadow: 0 10px 28px rgba(36, 82, 122, 0.08) !important;
   backdrop-filter: none !important;
 }
 
@@ -45,12 +73,25 @@ header button {
   color: var(--asbs-navy);
 }
 
+.text-asbs-navy { color: var(--asbs-navy) !important; }
+
 header .text-asbs-gold,
 .text-asbs-gold,
 .text-asbs-teal,
 .text-amber-600,
 .text-amber-700 {
   color: var(--asbs-gold) !important;
+}
+
+a.text-asbs-teal,
+main a.underline {
+  color: var(--asbs-accent) !important;
+  text-underline-offset: 3px;
+}
+
+a.text-asbs-teal:hover,
+main a.underline:hover {
+  color: var(--asbs-navy) !important;
 }
 
 header .border-white\/40,
