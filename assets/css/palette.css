@@ -1,14 +1,14 @@
-/* Warm paper sections. Footer and primary buttons use a lighter slate blue.
-   Source Serif 4 for headings, Source Sans 3 for text. Gold plus a brick accent. */
+/* Warm paper sections. Capability brass: royal footer and buttons,
+   Barlow Condensed headings, Barlow text, gold only as an edge. */
 
 :root {
   --asbs-paper: #f6f3ee;
   --asbs-white: #fffdf9;
   --asbs-ink: #2c2926;
-  --asbs-navy: #24527a;
+  --asbs-navy: #1d4e89;
   --asbs-gold: #7a5610;
   --asbs-gold-bright: #fff8ec;
-  --asbs-accent: #9c4221;
+  --asbs-edge: #e4c98a;
   --asbs-charcoal: #322e2a;
   --asbs-line: #e4ddd2;
 }
@@ -18,7 +18,7 @@ button,
 input,
 select,
 textarea {
-  font-family: "Source Sans 3", "Segoe UI", sans-serif !important;
+  font-family: Barlow, "Segoe UI", sans-serif !important;
 }
 
 body {
@@ -31,16 +31,15 @@ h2,
 h3,
 h4,
 header .font-extrabold {
-  font-family: "Source Serif 4", Georgia, serif !important;
-  font-optical-sizing: auto;
-  letter-spacing: -0.02em;
+  font-family: "Barlow Condensed", Barlow, sans-serif !important;
+  letter-spacing: 0.01em;
 }
 
-h1 { font-weight: 640 !important; }
-h2 { font-weight: 600 !important; }
+h1 { font-weight: 650 !important; }
+h2 { font-weight: 650 !important; }
 h3,
 h4,
-header .font-extrabold { font-weight: 560 !important; }
+header .font-extrabold { font-weight: 650 !important; }
 
 html { scrollbar-color: var(--asbs-navy) var(--asbs-paper); }
 
@@ -62,7 +61,7 @@ body > .bg-asbs-gold {
 header {
   background-color: var(--asbs-white) !important;
   color: var(--asbs-navy) !important;
-  border-top: 3px solid var(--asbs-accent) !important;
+  border-top: 3px solid #c69214 !important;
   border-bottom: 1px solid var(--asbs-line) !important;
   box-shadow: 0 10px 28px rgba(36, 82, 122, 0.08) !important;
   backdrop-filter: none !important;
@@ -85,7 +84,7 @@ header .text-asbs-gold,
 
 a.text-asbs-teal,
 main a.underline {
-  color: var(--asbs-accent) !important;
+  color: var(--asbs-navy) !important;
   text-underline-offset: 3px;
 }
 
@@ -107,16 +106,16 @@ a.bg-asbs-navy {
   background-image: none !important;
   background-color: var(--asbs-navy) !important;
   color: #ffffff !important;
-  border: 2px solid var(--asbs-navy) !important;
+  border: 2px solid var(--asbs-edge) !important;
 }
 
 a.gold-gradient:hover,
 button.gold-gradient:hover,
 button.bg-asbs-navy:hover,
 a.bg-asbs-navy:hover {
-  background-color: var(--asbs-navy) !important;
+  background-color: #163e6e !important;
   color: #ffffff !important;
-  border-color: #e4c98a !important;
+  border-color: var(--asbs-edge) !important;
 }
 
 span.gold-gradient {
@@ -280,4 +279,5 @@ section[class*="bg-asbs-navy"] a.gold-gradient,
 section[class*="bg-asbs-navy"] button.gold-gradient {
   color: #ffffff !important;
   background-color: var(--asbs-navy) !important;
+  border-color: var(--asbs-edge) !important;
 }
