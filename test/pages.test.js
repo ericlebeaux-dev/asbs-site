@@ -36,11 +36,25 @@ test("internal links and anchors resolve", () => {
 test("approved package prices are shown and checkout stays off", () => {
   const html = read("packages.html");
   for (const item of PACKAGES) {
+    assert.equal(html.includes(`id="${item.id}"`), true, item.id);
     assert.equal(html.includes(item.name), true, item.name);
     assert.equal(html.includes(item.price), true, item.price);
   }
-  assert.match(html, /not available for purchase/i);
+  for (const retired of [
+    "Contractor Starter",
+    "Registration Accelerator",
+    "Full-Service Contractor Launch",
+    "Contracting Growth Partner",
+    "$1,299",
+    "$2,499",
+    "$999–$2,499/month",
+  ]) {
+    assert.equal(html.includes(retired), false, retired);
+  }
   assert.match(html, /Online checkout is off/);
+  assert.match(html, /there is no checkout on this page/i);
+  assert.match(html, /Paid work begins only after a written agreement/);
+  assert.equal(/not available for purchase/i.test(html), false);
   assert.equal(/pending owner approval/i.test(html), false);
   assert.equal(/Proposed \$/.test(html), false);
   assert.equal(html.includes("buy.stripe.com"), false);

@@ -95,8 +95,22 @@ test("health, packages, and static protections", async () => {
     const packages = await api(ctx.base, "GET", "/api/packages");
     assert.equal(packages.data.purchasable, false);
     assert.equal(packages.data.pricingStatus, "approved");
-    assert.equal(packages.data.packages.length, 5);
-    assert.equal(packages.data.packages[0].price, "$249");
+    assert.deepEqual(
+      packages.data.packages.map((item) => [item.id, item.name, item.price]),
+      [
+        ["free-consultation", "Free consultation", "Free"],
+        ["bid-readiness-assessment", "Bid Readiness Assessment", "$199"],
+        ["quick-bid-review", "Quick Bid Review", "$249"],
+        ["sam-registration-prep", "SAM.gov Registration Prep", "$349"],
+        ["registration-bundle", "Registration Bundle", "$599"],
+        ["certification-support", "Certification support", "$599 each"],
+        ["contractor-launch", "Contractor Launch", "$999"],
+        ["monitor", "Monitor", "$350/month"],
+        ["starter-bid", "Starter Bid", "$1,000/month"],
+        ["growth", "Growth", "$1,800/month"],
+        ["full-capture", "Full Capture", "$2,800/month"],
+      ],
+    );
     assert.equal(health.data.payments.pricingStatus, "approved");
     assert.equal(health.data.payments.livePackageCheckout, false);
     assert.equal(health.data.bookingHorizonDays, 365);
