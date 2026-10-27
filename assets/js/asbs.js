@@ -120,7 +120,8 @@
     }
     apiFetch("/api/health").then(function (health) {
       var banner = document.getElementById("envBanner");
-      if (banner && health.environment && health.environment !== "production") {
+      var onProd = cfg.onProductionDomain === true;
+      if (banner && !onProd && health.environment && health.environment !== "production") {
         banner.hidden = false;
         banner.classList.remove("hidden");
         banner.textContent = "Staging preview. This is not the live ASBS website. Consulting packages cannot be purchased here.";

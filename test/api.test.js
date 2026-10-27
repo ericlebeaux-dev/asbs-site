@@ -389,3 +389,32 @@ test("dashboard login is unavailable until a password is configured", async () =
     await ctx.stop();
   }
 });
+
+test("CORS allows the production website origin on API routes", async () => {
+  const ctx = await start();
+  try {
+    const origin = "https://www.americanstandardbusinesssolutions.com";
+    const preflight = await fetch(ctx.base + "/api/health", {
+      method: "OPTIONS",
+      headers: {
+        Origin: origin,
+        "Access-Control-Request-Method": "GET",
+      },
+    });
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get("access-control-allow-origin"), origin);
+
+    const health = await api(ctx.base, "GET", "/api/health", null, { Origin: origin });
+    assert.equal(health.status, 200);
+    assert.equal(health.headers.get("access-control-allow-origin"), origin);
+
+    const blocked = await fetch(ctx.base + "/api/health", {
+      method: "OPTIONS",
+      headers: { Origin: "https://evil.example", "Access-Control-Request-Method": "GET" },
+    });
+    assert.equal(blocked.status, 403);
+    assert.equal(blocked.headers.get("access-control-allow-origin"), null);
+  } finally {
+    await ctx.stop();
+  }
+});

@@ -68,6 +68,12 @@ export function createApp(options = {}) {
 async function handle(req, res, ctx) {
   const url = new URL(req.url || "/", "http://127.0.0.1");
   setSecurityHeaders(res);
+  const corsOrigin = applyCors(req, res);
+  if (req.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
+    res.writeHead(corsOrigin ? 204 : 403);
+    res.end();
+    return;
+  }
   if (url.pathname.startsWith("/api/")) {
     await routeApi(req, res, url, ctx);
     return;
@@ -993,6 +999,22 @@ function allowRate(ctx, req, bucket) {
   recent.push(now);
   ctx.limits.set(key, recent);
   return true;
+}
+
+const PRODUCTION_ORIGINS = new Set([
+  "https://www.americanstandardbusinesssolutions.com",
+  "https://americanstandardbusinesssolutions.com",
+]);
+
+function applyCors(req, res) {
+  const origin = req.headers.origin || "";
+  if (!PRODUCTION_ORIGINS.has(origin)) return null;
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Max-Age", "86400");
+  return origin;
 }
 
 function setSecurityHeaders(res) {

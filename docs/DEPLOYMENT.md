@@ -14,6 +14,12 @@ The server uses Render’s `PORT` and listens on `0.0.0.0` when `PORT` is set. L
 
 GitHub Pages alone cannot keep the dashboard password or the Google refresh token safe, and it cannot run `server/`. The HTML can sit on Pages after approval, but scheduling, intake storage, vendor files, and the dashboard need this Node process or a replacement the owner chooses.
 
+## Production booking on the custom domain (Oct 27, 2026)
+
+The live domain still points at GitHub Pages (`main`). Pages cannot run `server/`, so `consult.html` on the production domain calls the Render API at `https://asbs-staging.onrender.com` (see `assets/js/config.js`). Render allows CORS only from the production origins. Booking windows stay Monday/Wednesday/Friday, 9:00–11:00 a.m. and 1:00–4:00 p.m. Central.
+
+A later cutover can attach `www.americanstandardbusinesssolutions.com` as a Render custom domain and update Porkbun DNS so the Node app serves the whole site. Until then, keep the Render service awake for bookings; the free plan sleeps after idle time.
+
 ## Backup
 
 - The git history is the backup of the website code. Production today is `main`.
