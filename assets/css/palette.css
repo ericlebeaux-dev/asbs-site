@@ -1,5 +1,5 @@
-/* Warm paper, charcoal, and one muted-gold accent.
-   Navy stays on the wordmark, navigation, and headings. */
+/* Warm paper sections. Navy is the footer and the primary-button color.
+   Gold stays on headings accents, step numbers, and button hover. */
 
 :root {
   --asbs-paper: #f6f3ee;
@@ -59,20 +59,29 @@ header .border-white\/30 {
   color: var(--asbs-navy) !important;
 }
 
-.gold-gradient,
+a.gold-gradient,
+button.gold-gradient,
 button.bg-asbs-navy,
 a.bg-asbs-navy {
   background-image: none !important;
-  background-color: var(--asbs-gold) !important;
-  color: var(--asbs-gold-bright) !important;
-  border-color: var(--asbs-gold) !important;
+  background-color: var(--asbs-navy) !important;
+  color: #ffffff !important;
+  border: 2px solid var(--asbs-navy) !important;
 }
 
-.gold-gradient:hover,
+a.gold-gradient:hover,
+button.gold-gradient:hover,
 button.bg-asbs-navy:hover,
 a.bg-asbs-navy:hover {
-  background-color: #5e430c !important;
-  border-color: #5e430c !important;
+  background-color: var(--asbs-navy) !important;
+  color: #ffffff !important;
+  border-color: #e4c98a !important;
+}
+
+span.gold-gradient {
+  background-image: none !important;
+  background-color: var(--asbs-gold) !important;
+  color: #fff8ec !important;
 }
 
 section.bg-asbs-navy,
@@ -163,7 +172,7 @@ div.bg-asbs-navy .text-asbs-gold {
 }
 
 footer {
-  background-color: var(--asbs-charcoal) !important;
+  background-color: var(--asbs-navy) !important;
   color: #f4efe8 !important;
 }
 
@@ -219,5 +228,15 @@ footer button:hover {
 }
 
 .focus\:ring-asbs-teal\/40:focus {
-  --tw-ring-color: rgba(122, 86, 16, 0.45) !important;
+  --tw-ring-color: rgba(10, 25, 47, 0.45) !important;
+}
+
+header a.gold-gradient,
+header button.gold-gradient,
+section.bg-asbs-navy a.gold-gradient,
+section.bg-asbs-navy button.gold-gradient,
+section[class*="bg-asbs-navy"] a.gold-gradient,
+section[class*="bg-asbs-navy"] button.gold-gradient {
+  color: #ffffff !important;
+  background-color: var(--asbs-navy) !important;
 }
