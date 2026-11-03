@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /dashboard.html
+Disallow: /command.html
 Disallow: /api/
 
 Sitemap: https://www.americanstandardbusinesssolutions.com/sitemap.xml

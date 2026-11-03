@@ -5,3 +5,6 @@ data/
 !.env.example
 *.log
 .DS_Store
+command-center-home-*
+dashboard_access.txt
+*.bak-*
