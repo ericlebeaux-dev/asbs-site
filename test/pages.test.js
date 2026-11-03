@@ -117,6 +117,33 @@ test("dashboard is not indexed and client code has no secrets", () => {
   assert.equal(/ASBS_DASHBOARD_PASSWORD\s*=\s*["'][^"']+/.test(client), false);
 });
 
+test("HubSpot tracking is on public pages and off the private dashboards", () => {
+  const snippet = '<script type="text/javascript" id="hs-script-loader" async defer src="//js-na2.hs-scripts.com/247883336.js"></script>';
+  const privatePages = new Set(["command.html", "dashboard.html"]);
+  for (const file of htmlFiles) {
+    const html = read(file);
+    const at = html.lastIndexOf(snippet);
+    if (privatePages.has(file)) {
+      assert.equal(at, -1, file);
+      assert.equal(html.includes("hs-scripts.com"), false, file);
+      assert.equal(html.includes("247883336"), false, file);
+      continue;
+    }
+    const body = html.lastIndexOf("</body>");
+    assert.notEqual(at, -1, file);
+    assert.equal(at < body, true, file);
+    assert.equal(html.slice(at + snippet.length, body).trim(), "", `${file} snippet is not the last node before </body>`);
+  }
+  for (const file of ["contact.html", "intake.html"]) {
+    const html = read(file);
+    assert.match(html, /<form\b[^>]*\bid="(?:contact|intake)Form"/);
+    assert.match(html, /<input\b[^>]*\bname="name"/);
+    assert.match(html, /<input\b[^>]*\btype="email"[^>]*\bname="email"/);
+    assert.equal(html.includes('type="hidden"'), false, `${file} has a hidden field HubSpot will not collect`);
+  }
+  assert.match(read("privacy.html"), /This site uses HubSpot to manage inquiries\./);
+});
+
 test("sitemap lists the public pages and skips the dashboard", () => {
   const sitemap = read("sitemap.xml");
   assert.equal(sitemap.includes("dashboard.html"), false);
