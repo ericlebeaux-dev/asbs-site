@@ -20,7 +20,7 @@ Confirmation email is sent only when `GOOGLE_GMAIL_REFRESH_TOKEN` is set on the 
 
 ## What is intentionally off
 
-- Consulting package checkout. The five package prices are approved. Online checkout stays off. Paid work starts only after a written agreement.
+- Consulting package checkout. The public offer is a free consultation, Registration Sprint ($397), Bid-Ready Sprint ($747), and Monthly Bid Desk ($297 / month). Online checkout stays off. Paid work starts only after a signed written agreement.
 - Google Calendar invitations. Calendar events, when credentials exist, are created with `sendUpdates=none` and without attendees. The site's own confirmation email is a separate Gmail send and stays off until `GOOGLE_GMAIL_REFRESH_TOKEN` is set.
 - Google Analytics, until `ASBS_GA_MEASUREMENT_ID` is a real `G-` id in `assets/js/config.js`.
 - Writing to Google Calendar, until the owner sets the OAuth variables in `.env.example` on the server.

@@ -2,7 +2,7 @@
   function watchIntake() {
     var form = document.getElementById("intakeForm");
     if (!form) return;
-    var packages = ["free-consultation", "bid-readiness-assessment", "quick-bid-review", "sam-registration-prep", "registration-bundle", "certification-support", "contractor-launch", "monitor", "starter-bid", "growth", "full-capture"];
+    var packages = ["free-consultation", "registration-sprint", "bid-ready-sprint", "monthly-bid-desk"];
     var paidPackages = packages.filter(function (id) { return id !== "free-consultation"; });
     function sync() {
       var levels = Array.prototype.map.call(form.querySelectorAll('input[name="contractingLevel"]:checked'), function (item) { return item.value; });

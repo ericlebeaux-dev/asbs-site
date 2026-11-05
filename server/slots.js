@@ -39,11 +39,10 @@ export const CONSULTATION_TYPES = {
   },
   quick_bid_preview_30: {
     id: "quick_bid_preview_30",
-    label: "Free pre-purchase consultation for Quick Bid Review",
+    label: "Free 30-minute consultation",
     minutes: 30,
     priceCents: 0,
-    packageId: "quick-bid-review",
-    durationNote: "30 minutes is assumed until the owner confirms the length. The Quick Bid Review fee is not charged for this call.",
+    durationNote: "Kept so an appointment booked under the retired review type can still be moved or cancelled. New consultations use the discovery, qualified, or onboarding types. This call is free.",
   },
 };
 

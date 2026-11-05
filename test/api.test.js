@@ -99,16 +99,9 @@ test("health, packages, and static protections", async () => {
       packages.data.packages.map((item) => [item.id, item.name, item.price]),
       [
         ["free-consultation", "Free consultation", "Free"],
-        ["bid-readiness-assessment", "Bid Readiness Assessment", "$199"],
-        ["quick-bid-review", "Quick Bid Review", "$249"],
-        ["sam-registration-prep", "SAM.gov Registration Prep", "$349"],
-        ["registration-bundle", "Registration Bundle", "$599"],
-        ["certification-support", "Certification support", "$599 each"],
-        ["contractor-launch", "Contractor Launch", "$999"],
-        ["monitor", "Monitor", "$350/month"],
-        ["starter-bid", "Starter Bid", "$1,000/month"],
-        ["growth", "Growth", "$1,800/month"],
-        ["full-capture", "Full Capture", "$2,800/month"],
+        ["registration-sprint", "Registration Sprint", "$397"],
+        ["bid-ready-sprint", "Bid-Ready Sprint", "$747"],
+        ["monthly-bid-desk", "Monthly Bid Desk", "$297 / month"],
       ],
     );
     assert.equal(health.data.payments.pricingStatus, "approved");
@@ -242,8 +235,8 @@ test("connected calendar creates one event and rolls back when creation fails", 
       ...customer({ email: "meet@example.com" }),
       type: "qualified_30",
       meetingMode: "meet",
-      serviceInterest: "quick-bid-review",
-      packageId: "quick-bid-review",
+      serviceInterest: "registration-sprint",
+      packageId: "registration-sprint",
       start,
     });
     assert.equal(booked.status, 201);
