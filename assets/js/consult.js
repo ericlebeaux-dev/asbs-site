@@ -1,16 +1,9 @@
 (function () {
   var PACKAGE_TYPES = {
     "free-consultation": "discovery_15",
-    "bid-readiness-assessment": "qualified_30",
-    "quick-bid-review": "quick_bid_preview_30",
-    "sam-registration-prep": "qualified_30",
-    "registration-bundle": "qualified_30",
-    "certification-support": "qualified_30",
-    "contractor-launch": "onboarding_45",
-    "monitor": "onboarding_45",
-    "starter-bid": "onboarding_45",
-    "growth": "onboarding_45",
-    "full-capture": "onboarding_45"
+    "registration-sprint": "qualified_30",
+    "bid-ready-sprint": "qualified_30",
+    "monthly-bid-desk": "onboarding_45"
   };
   var selectedType = "discovery_15";
   var selectedStart = "";

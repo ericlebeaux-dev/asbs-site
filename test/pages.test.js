@@ -46,12 +46,35 @@ test("approved package prices are shown and checkout stays off", () => {
     "Registration Accelerator",
     "Full-Service Contractor Launch",
     "Contracting Growth Partner",
+    "Bid Readiness Assessment",
+    "Quick Bid Review",
+    "SAM.gov Registration Prep",
+    "Registration Bundle",
+    "Certification support",
+    "Contractor Launch",
+    "Starter Bid",
+    "Full Capture",
     "$1,299",
     "$2,499",
     "$999–$2,499/month",
+    "$199",
+    "$249",
+    "$349",
+    "$599",
+    "$999",
+    "$350/month",
+    "$1,000/month",
+    "$1,800/month",
+    "$2,800/month",
   ]) {
     assert.equal(html.includes(retired), false, retired);
   }
+  assert.match(html, /Veterans and soldiers in transition are never charged or targeted by ASBS/);
+  assert.match(html, /Government registrations are free or state-fee-only/);
+  assert.match(html, /Work begins after a signed written agreement/);
+  assert.match(html, /americanstandardsolutions@gmail\.com/);
+  assert.match(html, /Book a free consult/);
+  assert.equal(html.includes("checkout.stripe.com"), false);
   assert.match(html, /Online checkout is off/);
   assert.match(html, /there is no checkout on this page/i);
   assert.match(html, /Paid work begins only after a written agreement/);
@@ -67,10 +90,20 @@ test("consultation and intake forms offer the current packages", () => {
     "contractor-starter",
     "registration-accelerator",
     "growth-partner",
+    "bid-readiness-assessment",
+    "quick-bid-review",
+    "sam-registration-prep",
+    "registration-bundle",
+    "certification-support",
+    "contractor-launch",
+    "starter-bid",
+    "full-capture",
     "Contractor Starter",
     "Registration Accelerator",
     "Full-Service Contractor Launch",
     "Contracting Growth Partner",
+    "Bid Readiness Assessment",
+    "Quick Bid Review",
     "five consulting packages",
   ];
   const surfaces = ["consult.html", "intake.html", "services.html", "assets/js/forms.js", "assets/js/consult.js", "server/validate.js"];
@@ -100,11 +133,35 @@ test("consultation and intake forms offer the current packages", () => {
 
 test("consultation page lists every free appointment type", () => {
   const html = read("consult.html");
-  for (const id of ["discovery_15", "qualified_30", "onboarding_45", "quick_bid_preview_30"]) {
+  for (const id of ["discovery_15", "qualified_30", "onboarding_45"]) {
     assert.equal(html.includes(`data-type="${id}"`), true);
   }
+  assert.equal(html.includes('data-type="quick_bid_preview_30"'), false);
+  assert.equal(html.includes("Quick Bid Review"), false);
+  assert.match(html, /intake\.html/);
+  assert.match(html, /262987118811061/);
+  assert.match(html, /https:\/\/form\.jotform\.com\/262987118811061/);
   assert.match(html, /\(281\) 954-5167/);
   assert.match(html, /America\/Chicago|Central/);
+});
+
+test("intake points at the existing Jotform and the free consult", () => {
+  const html = read("intake.html");
+  assert.match(html, /id="JotFormIFrame-262987118811061"/);
+  assert.match(html, /src="https:\/\/form\.jotform\.com\/262987118811061"/);
+  assert.match(html, /href="consult\.html"/);
+  assert.match(html, /Veterans and soldiers in transition/);
+  assert.equal(/name="ssn"|name="ein"|name="password"/i.test(html), false);
+});
+
+test("homepage consulting section matches the three packages", () => {
+  const html = read("index.html");
+  const section = html.slice(html.indexOf('id="consulting"'), html.indexOf('id="buyers"'));
+  for (const text of ["Registration Sprint", "Bid-Ready Sprint", "Monthly Bid Desk", "$397", "$747", "$297 / month", "consult.html", "packages.html", "intake.html"]) {
+    assert.equal(section.includes(text), true, text);
+  }
+  assert.match(section, /Veterans and soldiers in transition/);
+  assert.equal(section.includes("buy.stripe.com"), false);
 });
 
 test("dashboard is not indexed and client code has no secrets", () => {
