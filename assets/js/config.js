@@ -5,8 +5,8 @@
     host === "www.americanstandardbusinesssolutions.com" ||
     host === "americanstandardbusinesssolutions.com";
   // GitHub Pages serves the HTML on the production domain but cannot run /api.
-  // Booking, intake, and dashboard calls go to the Render Node service until the
-  // custom domain is pointed at Render itself.
+  // Intake, contact, vendor, quote, and dashboard calls go to the Render Node
+  // service. The public site does not book consultation slots.
   var apiBase = onProductionDomain ? "https://asbs-staging.onrender.com" : "";
   window.ASBS_PUBLIC_CONFIG = {
     apiBase: apiBase,

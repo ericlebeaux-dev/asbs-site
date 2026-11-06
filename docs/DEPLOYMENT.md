@@ -14,11 +14,13 @@ The server uses Render’s `PORT` and listens on `0.0.0.0` when `PORT` is set. L
 
 GitHub Pages alone cannot keep the dashboard password or the Google refresh token safe, and it cannot run `server/`. The HTML can sit on Pages after approval, but scheduling, intake storage, vendor files, and the dashboard need this Node process or a replacement the owner chooses.
 
-## Production booking on the custom domain (Oct 27, 2026)
+## Production forms on the custom domain
 
-The live domain still points at GitHub Pages (`main`). Pages cannot run `server/`, so `consult.html` on the production domain calls the Render API at `https://asbs-staging.onrender.com` (see `assets/js/config.js`). Render allows CORS only from the production origins. Booking windows stay Monday/Wednesday/Friday, 9:00–11:00 a.m. and 1:00–4:00 p.m. Central.
+The live domain still points at GitHub Pages (`main`). Pages cannot run `server/`. Intake, contact, vendor, quote, and dashboard calls from the production domain go to the Render API at `https://asbs-staging.onrender.com` (see `assets/js/config.js`). Render allows CORS only from the production origins.
 
-A later cutover can attach `www.americanstandardbusinesssolutions.com` as a Render custom domain and update Porkbun DNS so the Node app serves the whole site. Until then, keep the Render service awake for bookings; the free plan sleeps after idle time.
+The public consultation page does not load open times and does not call `/api/slots` or `/api/bookings`. Visitors schedule by phone, email, or the contact form. The Render booking routes can stay deployed; nothing on the public pages uses them.
+
+A later cutover can attach `www.americanstandardbusinesssolutions.com` as a Render custom domain and update Porkbun DNS so the Node app serves the whole site. Until then, keep the Render service awake for intake, contact, vendor, and quote forms; the free plan sleeps after idle time. The booking endpoints do not need to stay awake for the public site.
 
 ## Backup
 
@@ -34,7 +36,7 @@ A later cutover can attach `www.americanstandardbusinesssolutions.com` as a Rend
 ## After a future approved launch
 
 - Load the homepage, a package page, the consultation page, intake, and contact on a phone.
-- Book a test appointment and confirm the calendar result matches `/api/health`.
+- Confirm the consultation page shows phone, email, and the contact form, and does not request `/api/slots`.
 - Submit a test intake and confirm one dashboard record, not two, if the email repeats.
 - Confirm package buttons still do not open Stripe.
 - Confirm the invoice link still pays an invoice only if you intend to keep it.
