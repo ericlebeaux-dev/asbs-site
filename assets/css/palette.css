@@ -322,28 +322,6 @@ footer p.slogan-band {
   border: 0;
 }
 
-.month-nav {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.month-nav button {
-  width: 100%;
-}
-
-@media (max-width: 420px) {
-  .month-nav {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .month-nav p {
-    grid-column: 1 / -1;
-    order: -1;
-  }
-}
-
 input,
 select,
 textarea {

@@ -73,38 +73,53 @@ test("consultation and intake forms offer the current packages", () => {
     "Contracting Growth Partner",
     "five consulting packages",
   ];
-  const surfaces = ["consult.html", "intake.html", "services.html", "assets/js/forms.js", "assets/js/consult.js", "server/validate.js"];
+  const surfaces = ["consult.html", "intake.html", "services.html", "assets/js/forms.js", "server/validate.js"];
   for (const file of surfaces) {
     const text = read(file);
     for (const name of retired) {
       assert.equal(text.includes(name), false, `${file} still lists ${name}`);
     }
   }
-  for (const file of ["consult.html", "intake.html"]) {
-    const html = read(file);
-    for (const item of PACKAGES) {
-      assert.equal(html.includes(`<option value="${item.id}">${item.name}</option>`), true, `${file} ${item.name}`);
-    }
+  const intake = read("intake.html");
+  for (const item of PACKAGES) {
+    assert.equal(intake.includes(`<option value="${item.id}">${item.name}</option>`), true, `intake.html ${item.name}`);
   }
   const forms = read("assets/js/forms.js");
-  const consult = read("assets/js/consult.js");
   for (const item of PACKAGES) {
     assert.equal(SERVICE_INTERESTS.includes(item.id), true, item.id);
     assert.equal(forms.includes(`"${item.id}"`), true, `forms.js ${item.id}`);
-    assert.equal(consult.includes(`"${item.id}": "${item.consultationType}"`), true, `consult.js ${item.id}`);
   }
   for (const retiredId of ["contractor-starter", "registration-accelerator", "growth-partner"]) {
     assert.equal(SERVICE_INTERESTS.includes(retiredId), false, retiredId);
   }
 });
 
-test("consultation page lists every free appointment type", () => {
+test("consultation page asks visitors to contact ASBS instead of picking a slot", () => {
   const html = read("consult.html");
-  for (const id of ["discovery_15", "qualified_30", "onboarding_45", "quick_bid_preview_30"]) {
-    assert.equal(html.includes(`data-type="${id}"`), true);
-  }
   assert.match(html, /\(281\) 954-5167/);
-  assert.match(html, /America\/Chicago|Central/);
+  assert.match(html, /info@americanstandardbusinesssolutions\.com/);
+  assert.match(html, /href="contact\.html"/);
+  assert.match(html, /href="intake\.html"/);
+  assert.match(html, /does not list open times/);
+  assert.equal(html.includes("assets/js/consult.js"), false);
+  assert.equal(html.includes("calendar.google.com"), false);
+  assert.equal(html.includes("/api/slots"), false);
+  assert.equal(html.includes("/api/bookings"), false);
+  assert.equal(html.includes("bookingForm"), false);
+  assert.equal(html.includes("slotList"), false);
+  assert.equal(html.includes("Checking open times"), false);
+  assert.equal(html.includes("Checking whether Google Calendar"), false);
+  assert.equal(fs.existsSync(path.join(root, "assets/js/consult.js")), false);
+  const clientJs = fs.readdirSync(path.join(root, "assets/js")).map((file) => read(path.join("assets/js", file))).join("\n");
+  assert.equal(clientJs.includes("/api/slots"), false);
+  assert.equal(clientJs.includes("/api/bookings"), false);
+  assert.equal(clientJs.includes("calendar.google.com"), false);
+  for (const file of htmlFiles) {
+    const page = read(file);
+    assert.equal(page.includes("calendar.google.com"), false, file);
+    assert.equal(page.includes("/api/slots"), false, file);
+    assert.equal(page.includes("See open times"), false, file);
+  }
 });
 
 test("dashboard is not indexed and client code has no secrets", () => {
