@@ -34,35 +34,43 @@ test("internal links and anchors resolve", () => {
   assert.deepEqual(missing, []);
 });
 
-test("approved package prices are shown and checkout stays off", () => {
+test("public consulting pages do not publish package prices and checkout stays off", () => {
   const html = read("packages.html");
+  const marketing = ["index.html", "services.html", "packages.html", "consult.html", "about.html"].map(read).join("\n");
   for (const item of PACKAGES) {
     assert.equal(html.includes(`id="${item.id}"`), true, item.id);
-    assert.equal(html.includes(item.name), true, item.name);
-    assert.equal(html.includes(item.price), true, item.price);
+    if (item.price.includes("$")) assert.equal(marketing.includes(item.price), false, item.price);
   }
-  for (const retired of [
+  for (const blocked of [
+    "Registration Sprint",
+    "Bid-Ready Sprint",
+    "BidReady",
+    "Monthly Bid Desk",
+    "MonthlyBidDesk",
+    "$397",
+    "$747",
+    "$297",
+    "Mission-Ready Supplies",
     "Contractor Starter",
     "Registration Accelerator",
-    "Full-Service Contractor Launch",
-    "Contracting Growth Partner",
     "$1,299",
     "$2,499",
-    "$999–$2,499/month",
+    "buy.stripe.com",
+    "sk_live",
+    "not available for purchase",
+    "pending owner approval",
   ]) {
-    assert.equal(html.includes(retired), false, retired);
+    assert.equal(html.toLowerCase().includes(blocked.toLowerCase()), false, blocked);
   }
   assert.match(html, /Online checkout is off/);
   assert.match(html, /there is no checkout on this page/i);
   assert.match(html, /Paid work begins only after a written agreement/);
-  assert.equal(/not available for purchase/i.test(html), false);
-  assert.equal(/pending owner approval/i.test(html), false);
-  assert.equal(/Proposed \$/.test(html), false);
-  assert.equal(html.includes("buy.stripe.com"), false);
-  assert.equal(html.includes("sk_live"), false);
+  assert.match(read("assets/css/site.css"), /PROVISIONAL THEME/);
+  assert.match(read("assets/css/site.css"), /--asbs-navy/);
+  assert.match(read("assets/css/site.css"), /prefers-reduced-motion/);
 });
 
-test("consultation and intake forms offer the current packages", () => {
+test("intake offers consulting topics without the withdrawn package menu", () => {
   const retired = [
     "contractor-starter",
     "registration-accelerator",
@@ -72,6 +80,9 @@ test("consultation and intake forms offer the current packages", () => {
     "Full-Service Contractor Launch",
     "Contracting Growth Partner",
     "five consulting packages",
+    "Bid Readiness Assessment",
+    "Quick Bid Review",
+    "Full Capture",
   ];
   const surfaces = ["consult.html", "intake.html", "services.html", "assets/js/forms.js", "server/validate.js"];
   for (const file of surfaces) {
@@ -81,17 +92,22 @@ test("consultation and intake forms offer the current packages", () => {
     }
   }
   const intake = read("intake.html");
-  for (const item of PACKAGES) {
-    assert.equal(intake.includes(`<option value="${item.id}">${item.name}</option>`), true, `intake.html ${item.name}`);
+  for (const choice of [
+    ["free-consultation", "Free consultation"],
+    ["operations", "Growth, expansion, and readiness"],
+    ["contracting-readiness", "Government contracting opportunities"],
+    ["procurement-consulting", "Commercial contracting opportunities"],
+  ]) {
+    assert.equal(SERVICE_INTERESTS.includes(choice[0]), true, choice[0]);
+    assert.match(intake, new RegExp(`<option value="${choice[0]}">${choice[1]}</option>`));
   }
-  const forms = read("assets/js/forms.js");
-  for (const item of PACKAGES) {
-    assert.equal(SERVICE_INTERESTS.includes(item.id), true, item.id);
-    assert.equal(forms.includes(`"${item.id}"`), true, `forms.js ${item.id}`);
-  }
-  for (const retiredId of ["contractor-starter", "registration-accelerator", "growth-partner"]) {
-    assert.equal(SERVICE_INTERESTS.includes(retiredId), false, retiredId);
-  }
+  assert.equal(intake.includes("janitorial"), false);
+  assert.equal(intake.includes("value=\"supplies\""), false);
+  assert.match(intake, /id="intakeForm"/);
+  assert.match(read("assets/js/forms.js"), /\/api\/intake/);
+  assert.match(read("contact.html"), /id="contactForm"/);
+  assert.match(read("contact.html"), /\/api\/inquiries|assets\/js\/forms\.js/);
+  assert.match(read("assets/js/config.js"), /asbs-staging\.onrender\.com/);
 });
 
 test("consultation page asks visitors to contact ASBS instead of picking a slot", () => {

@@ -1,59 +1,85 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Free Consultation | American Standard Business Solutions</title>
-<meta name="description" content="Request a free ASBS consultation for government contracting readiness, procurement, or business operations. Consultations are free and scheduled directly with ASBS. Paid work starts only after a separate agreement.">
+<title>Free consultation | American Standard Business Solutions</title>
+<meta name="description" content="Request a free ASBS consultation about growth, readiness, or government and commercial contracting. No on-site time picker. Paid work starts only after a written agreement.">
 <link rel="canonical" href="https://www.americanstandardbusinesssolutions.com/consult.html">
-<meta property="og:title" content="Free Consultation | American Standard Business Solutions">
-<meta property="og:description" content="Request a free ASBS consultation by phone, email, or the contact form. No on-site time picker. No charge for the introductory conversation.">
+<meta property="og:title" content="Free consultation | American Standard Business Solutions">
+<meta property="og:description" content="Call, email, or send a message. ASBS confirms the time directly. The conversation is free.">
 <meta property="og:image" content="https://www.americanstandardbusinesssolutions.com/assets/logo.png">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;1,400&family=Barlow+Condensed:wght@600..700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="assets/css/site.css">
 <script src="assets/js/config.js"></script>
-<script>tailwind.config={theme:{extend:{colors:{asbs:{navy:'#0A192F',navyLight:'#112240',gold:'#C69214',goldLight:'#FBF4E4',teal:'#0E7490',tealLight:'#E6F6F8',green:'#2F7D4F',greenLight:'#ECF7EF',cream:'#FFFAF0'}},fontFamily:{sans:['Inter','sans-serif']}}}}</script>
-<style>.gold-gradient{background:linear-gradient(135deg,#D4AF37 0%,#C69214 50%,#9A6F09 100%)}:focus-visible{outline:3px solid #0E7490;outline-offset:2px}</style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased">
-<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[80] focus:bg-white focus:text-asbs-navy focus:px-3 focus:py-2 focus:rounded">Skip to content</a>
-<div id="envBanner" class="hidden bg-amber-100 text-amber-950 text-center text-sm px-4 py-2" role="status"></div>
-<div class="bg-asbs-gold text-asbs-navy py-2 px-4 text-xs sm:text-sm font-semibold text-center">People, Process, Solutions, Results</div>
-<header class="sticky top-0 z-50 bg-asbs-navy/95 backdrop-blur text-white border-b border-slate-700">
-  <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-    <a href="index.html" class="flex items-center gap-3" aria-label="American Standard Business Solutions home"><img src="assets/logo.png" alt="American Standard Business Solutions logo" class="w-12 h-12 rounded-full"><span class="font-extrabold leading-tight">American Standard<br><span class="text-xs uppercase tracking-widest text-asbs-gold">Business Solutions</span></span></a>
-    <nav class="hidden xl:flex items-center gap-5 text-sm font-medium" aria-label="Main"><a href="services.html" class="hover:text-asbs-gold">Services</a><a href="packages.html" class="hover:text-asbs-gold">Consulting</a><a href="about.html" class="hover:text-asbs-gold">About</a><a href="vendors.html" class="hover:text-asbs-gold">Vendors</a><a href="intake.html" class="hover:text-asbs-gold">Intake</a><a href="contact.html" class="hover:text-asbs-gold">Contact</a><a href="consult.html" class="gold-gradient text-asbs-navy font-bold px-3 py-2 rounded-lg" data-track="nav-consult">Free Consultation</a></nav>
-    <button type="button" class="xl:hidden p-2" data-menu-button aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu"><i data-lucide="menu"></i></button>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="envBanner" class="env-banner" role="status" hidden></div>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html"><img src="assets/logo.png" alt="American Standard Business Solutions logo" width="48" height="48"><span>American Standard<small>Business Solutions</small></span></a>
+    <button type="button" class="nav-toggle" data-menu-button aria-expanded="false" aria-controls="mobileMenu">Menu</button>
+    <nav class="desktop-nav" aria-label="Main">
+      <a href="services.html">Services</a>
+      <a href="index.html#approach">Approach</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+      <a class="nav-cta" href="consult.html" aria-current="page">Free consultation</a>
+    </nav>
   </div>
-  <div id="mobileMenu" class="hidden xl:hidden px-4 pb-4 flex flex-col gap-3 text-sm" data-mobile-menu><a href="services.html">Services</a><a href="packages.html">Consulting</a><a href="about.html">About</a><a href="vendors.html">Vendors</a><a href="intake.html">Intake</a><a href="contact.html">Contact</a><a href="consult.html" class="text-asbs-gold font-bold">Free Consultation</a></div>
+  <div id="mobileMenu" class="mobile-nav hidden" data-mobile-menu>
+    <a href="services.html">Services</a>
+    <a href="index.html#approach">Approach</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="consult.html">Free consultation</a>
+  </div>
 </header>
-<main id="main" class="max-w-5xl mx-auto px-4 py-12">
-  <p class="text-asbs-teal font-semibold uppercase tracking-widest text-xs">No charge</p>
-  <h1 class="mt-2 text-4xl font-extrabold text-asbs-navy">Request a free consultation</h1>
-  <p class="mt-4 text-slate-600 max-w-3xl">All introductory consultations are free. A charge applies only if you later agree in writing to a consulting service. Asking for a consultation does not hire ASBS, does not authorize a registration or bid, and does not purchase the Quick Bid Review.</p>
-  <p class="mt-3 text-sm text-slate-600">ASBS schedules consultations directly with you. This page does not list open times or book a slot. Call, email, or send a message, and ASBS will confirm a time. Office hours are Monday–Friday, 8:00 a.m.–5:00 p.m. Central.</p>
-  <img src="assets/img/document-review.webp" alt="Two professionals reviewing documents during a business meeting" width="1600" height="1068" class="mt-6 w-full h-64 object-cover rounded-2xl" loading="lazy">
-
-  <section class="mt-8 rounded-2xl bg-white border border-slate-200 p-6" aria-labelledby="schedule-heading">
-    <h2 id="schedule-heading" class="text-2xl font-extrabold text-asbs-navy">Schedule by contacting ASBS</h2>
-    <p class="mt-3 text-slate-700">Phone: <a class="text-asbs-teal font-semibold" href="tel:+12819545167">(281) 954-5167</a></p>
-    <p class="mt-2 text-slate-700">Email: <a class="text-asbs-teal font-semibold" href="mailto:info@americanstandardbusinesssolutions.com?subject=Free%20consultation%20request">info@americanstandardbusinesssolutions.com</a></p>
-    <div class="mt-6 flex flex-wrap gap-3">
-      <a href="contact.html" class="inline-block gold-gradient text-asbs-navy font-bold px-5 py-3 rounded-lg" data-track="consult-contact">Send a message</a>
-      <a href="tel:+12819545167" class="inline-block border border-asbs-navy text-asbs-navy font-bold px-5 py-3 rounded-lg" data-track="consult-phone">Call (281) 954-5167</a>
-      <a href="intake.html" class="inline-block border border-asbs-navy text-asbs-navy font-bold px-5 py-3 rounded-lg" data-track="consult-intake">Start client intake</a>
+<main id="main">
+  <section class="page-intro">
+    <div class="wrap">
+      <p class="eyebrow">No charge</p>
+      <h1>Request a free consultation</h1>
+      <p class="narrow">The introductory conversation is free. It is a working discussion about growth, expansion, readiness, or contracting opportunities. It does not hire ASBS, authorize a registration or a bid, or purchase later work.</p>
+      <p class="narrow">ASBS schedules consultations directly with you. This page does not list open times or book a slot. Call, email, or send a message, and ASBS will confirm a time. Office hours are Monday–Friday, 8:00 a.m.–5:00 p.m. Central.</p>
     </div>
-    <p class="mt-4 text-sm text-slate-600">The message form is already on the contact page. Choose Consulting as the topic and say what you want to talk about, including a package name if you have one in mind. The intake form is separate and does not reserve a time.</p>
+  </section>
+  <section class="section" aria-labelledby="schedule-heading">
+    <div class="wrap grid-2">
+      <article class="card">
+        <h2 id="schedule-heading">Reach ASBS</h2>
+        <p>Phone: <a href="tel:+12819545167">(281) 954-5167</a></p>
+        <p>Email: <a href="mailto:info@americanstandardbusinesssolutions.com?subject=Free%20consultation%20request">info@americanstandardbusinesssolutions.com</a></p>
+        <div class="actions">
+          <a class="button" href="contact.html" data-track="consult-contact">Send a message</a>
+          <a class="button secondary" href="tel:+12819545167" data-track="consult-phone">Call (281) 954-5167</a>
+          <a class="button secondary" href="intake.html" data-track="consult-intake">Start client intake</a>
+        </div>
+        <p class="muted">On the contact form, choose Consulting and say what you want to discuss. The intake form is separate and does not reserve a time.</p>
+      </article>
+      <article class="card">
+        <h2>What to have in mind</h2>
+        <ul>
+          <li>The kind of growth or expansion you are considering.</li>
+          <li>Whether the question is readiness, a government notice, or a commercial opportunity.</li>
+          <li>What decision you need after the call.</li>
+        </ul>
+        <p>Bring as much as you have. You do not need a finished package name. Fees, if any, are discussed only after this free conversation and only in a written agreement.</p>
+      </article>
+    </div>
   </section>
 </main>
-<footer class="bg-asbs-navy text-slate-300 mt-16"><div class="max-w-7xl mx-auto px-4 py-10 text-sm grid md:grid-cols-3 gap-6"><div><img src="assets/logo.png" alt="" class="w-14 h-14 rounded-full"><p class="mt-3 text-white font-bold">American Standard Business Solutions, LLC</p><p>Katy, Texas · Houston &amp; DFW on-site · Supplies nationwide</p></div><div><p class="font-bold text-white">Contact</p><p><a class="hover:text-asbs-gold" href="tel:+12819545167">(281) 954-5167</a></p><p><a class="hover:text-asbs-gold" href="mailto:info@americanstandardbusinesssolutions.com">info@americanstandardbusinesssolutions.com</a></p></div><div><p class="font-bold text-white">Explore</p><p><a class="hover:text-asbs-gold" href="packages.html">Consulting packages</a> · <a class="hover:text-asbs-gold" href="intake.html">Intake</a> · <a class="hover:text-asbs-gold" href="privacy.html">Privacy</a> · <a class="hover:text-asbs-gold" href="terms.html">Terms</a></p></div></div><p class="max-w-7xl mx-auto px-4 pb-6 text-xs">Photo: Kampus Production via <a class="underline" href="https://www.pexels.com/license/">Pexels (free license)</a>. Photos are illustrative.</p></footer>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div><strong>American Standard Business Solutions, LLC</strong><p>Katy, Texas</p></div>
+    <div><p><a href="tel:+12819545167">(281) 954-5167</a><br><a href="mailto:info@americanstandardbusinesssolutions.com">info@americanstandardbusinesssolutions.com</a></p></div>
+    <div><p><a href="packages.html">Engagements</a> · <a href="intake.html">Intake</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
+  </div>
+</footer>
 <script src="assets/js/asbs.js"></script>
-<link rel="stylesheet" href="assets/css/palette.css">
 <script type="text/javascript" id="hs-script-loader" async defer src="//js-na2.hs-scripts.com/247883336.js"></script>
 </body>
 </html>
