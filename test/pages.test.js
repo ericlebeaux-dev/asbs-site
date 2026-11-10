@@ -184,9 +184,11 @@ test("public pages and client scripts do not name Katy", () => {
   for (const file of files) {
     assert.equal(/katy/i.test(read(file)), false, file);
   }
-  assert.match(read("index.html"), /Veteran-led consulting · Texas/);
-  assert.match(read("about.html"), /consulting firm in Texas/);
-  assert.match(read("contact.html"), /Based in Texas/);
+  assert.match(read("index.html"), /Veteran-led consulting · Greater Houston · San Antonio · Austin · DFW/);
+  assert.match(read("about.html"), /consulting firm in Greater Houston, San Antonio, Austin, and DFW, Texas\./);
+  assert.match(read("contact.html"), /in Greater Houston, San Antonio, Austin, and DFW, Texas\./);
+  assert.match(read("services.html"), /Serving Greater Houston, Greater San Antonio, Greater Austin, and Greater DFW, including communities within about 50 miles of each\./);
+  assert.match(read("index.html"), /Serving Greater Houston, San Antonio, Austin & DFW and surrounding areas/);
   assert.match(read("assets/js/forms.js"), /such as Dallas, TX/);
   assert.match(read("contact.html"), /\(281\) 954-5167/);
 });
