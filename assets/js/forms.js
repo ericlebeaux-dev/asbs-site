@@ -71,7 +71,7 @@
       need("organization", "Enter the business name.");
       need("email", "Enter an email address.", function (el) { return el && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value.trim()); });
       need("phone", "Enter a phone number.", function (el) { return el && el.value.replace(/\D/g, "").length >= 10; });
-      need("based", "Enter a city and state, such as Katy, TX.", function (el) {
+      need("based", "Enter a city and state, such as Dallas, TX.", function (el) {
         return el && /,\s*\S+/.test(el.value.trim());
       });
       need("serviceInterest", "Choose what you want to talk about.", function (el) { return el && el.value; });
