@@ -195,8 +195,43 @@ test("public pages and client scripts do not name Katy", () => {
 
 test("sitemap lists the public pages and skips the dashboard", () => {
   const sitemap = read("sitemap.xml");
-  assert.equal(sitemap.includes("dashboard.html"), false);
-  for (const file of ["services.html", "packages.html", "consult.html", "codes.html", "intake.html", "vendors.html", "about.html", "contact.html"]) {
+  for (const file of ["dashboard.html", "packages.html", "command.html", "thanks.html"]) {
+    assert.equal(sitemap.includes(file), false, file);
+  }
+  for (const file of ["services.html", "consult.html", "codes.html", "intake.html", "vendors.html", "about.html", "contact.html"]) {
     assert.equal(sitemap.includes(file), true);
+  }
+});
+
+test("November 10 quick fixes stay within the approved scope", () => {
+  const title = read("index.html").match(/<title>([^<]*)<\/title>/)[1];
+  assert.equal(title.length <= 60, true, title);
+  assert.equal(/jotform/i.test(read("index.html")), false);
+  assert.match(read("assets/css/site.css"), /\.hero \.button:not\(\.secondary\) \{[\s\S]*background: var\(--asbs-ivory\)/);
+  assert.match(read("assets/css/site.css"), /\.hero \.eyebrow,\s*\n\.eyebrow \{[\s\S]*letter-spacing: 0\.16em;/);
+  assert.match(read("intake.html"), /id="stepProgress"[^>]*aria-label="Intake progress"/);
+  assert.match(read("assets/js/asbs.js"), /button\.textContent = hidden \? "Menu" : "Close"/);
+  assert.match(read("consult.html"), /<title>Call or email ASBS<\/title>/);
+  assert.match(read("consult.html"), /free consultation/i);
+  assert.equal(read("index.html").includes("streetAddress"), false);
+  assert.equal(read("index.html").includes("postalCode"), false);
+  assert.equal(fs.existsSync(path.join(root, "favicon.ico")), true);
+  for (const file of ["command.html", "thanks.html", "packages.html"]) {
+    assert.match(read(file), /noindex, nofollow/);
+  }
+  const marketing = htmlFiles.filter((file) => file !== "command.html" && file !== "dashboard.html");
+  for (const file of marketing) {
+    const html = read(file);
+    const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
+    assert.equal(header.includes("Approach"), false, file);
+    assert.match(header, /href="intake\.html"[^>]*>Start free consultation/, file);
+    assert.match(html, /Monday–Friday, 8:00 a\.m\.–5:00 p\.m\. Central Time/, file);
+    assert.match(html, /\(281\) 954-5167/, file);
+    assert.match(html, /property="og:title"/, file);
+    assert.match(html, /property="og:url"/, file);
+    assert.match(html, /property="og:image"/, file);
+    assert.match(html, /property="og:type"/, file);
+    assert.match(html, /name="twitter:card"/, file);
+    assert.equal(/katy/i.test(html), false, file);
   }
 });

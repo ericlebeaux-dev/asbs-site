@@ -98,7 +98,7 @@
       button.addEventListener("click", function () {
         var hidden = menu.classList.toggle("hidden");
         button.setAttribute("aria-expanded", hidden ? "false" : "true");
-        button.setAttribute("aria-label", hidden ? "Open menu" : "Close menu");
+        button.textContent = hidden ? "Menu" : "Close";
       });
     }
     document.addEventListener("click", function (event) {

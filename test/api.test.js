@@ -120,7 +120,7 @@ test("health, packages, and static protections", async () => {
 
     const home = await fetch(ctx.base + "/");
     assert.equal(home.status, 200);
-    assert.match(await home.text(), /Free Consultation|Request a Quote/);
+    assert.match(await home.text(), /Start free consultation|Request a free consultation/);
 
     assert.equal((await fetch(ctx.base + "/server/app.js")).status, 404);
     assert.equal((await fetch(ctx.base + "/.env")).status, 404);
