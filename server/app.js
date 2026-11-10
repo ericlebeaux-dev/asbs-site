@@ -9,6 +9,7 @@ import { PACKAGES, PRICING_STATUS } from "./packages.js";
 import { HORIZON_DAYS, consultationType, generateSlots } from "./slots.js";
 import { createStore } from "./store.js";
 import { TIME_ZONE, addDaysYmd, formatZoned, zonedParts, zonedTimeToUtc, zonedToday } from "./time.js";
+import { codeSummary } from "./codes.js";
 import {
   httpError,
   validateBooking,
@@ -149,7 +150,9 @@ async function routeApi(req, res, url, ctx) {
         `Email: ${fields.email}`,
         `Phone: ${fields.phone}`,
         `Interest: ${fields.serviceInterest}`,
-      ],
+        codeSummary("NAICS", fields.naics),
+        codeSummary("NIGP", fields.nigp),
+      ].filter(Boolean),
     });
     await remember(store, config, "intake");
     sendJson(res, saved.duplicate ? 200 : 201, {

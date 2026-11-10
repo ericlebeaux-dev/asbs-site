@@ -69,7 +69,11 @@
       '</section>',
       '<section class="mt-8"><h2 class="font-bold text-lg text-asbs-navy">New leads in range</h2><p class="mt-1 text-sm text-slate-600">' + report.pipeline.newLeads + ' customer or vendor records were first saved in this range. The table below is every record still on this server.</p></section>',
       '<section class="mt-4"><h2 class="font-bold text-lg text-asbs-navy">Records</h2><div class="mt-4 overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table class="min-w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="p-3">Name</th><th class="p-3">Role</th><th class="p-3">Stage</th><th class="p-3">Interest</th><th class="p-3">Follow-up</th></tr></thead><tbody>' + data.leads.map(function (lead) {
-        return '<tr class="border-t border-slate-100"><td class="p-3">' + escapeHtml(lead.organization || lead.name) + '<div class="text-xs text-slate-500">' + escapeHtml(lead.email) + '</div></td><td class="p-3">' + escapeHtml(lead.role) + '</td><td class="p-3"><select data-lead="' + lead.id + '" class="border rounded p-1">' + ["new_lead","qualified","consultation_scheduled","consultation_completed","proposal_sent","won","lost","active_client","completed","follow_up"].map(function (stage) {
+        var codeBits = [];
+        if (lead.intake && lead.intake.naics) codeBits.push("NAICS " + String(lead.intake.naics).replace(/\n/g, "; "));
+        if (lead.intake && lead.intake.nigp) codeBits.push("NIGP " + String(lead.intake.nigp).replace(/\n/g, "; "));
+        var codeLine = codeBits.length ? '<div class="text-xs text-slate-500">' + escapeHtml(codeBits.join(" · ")) + '</div>' : "";
+        return '<tr class="border-t border-slate-100"><td class="p-3">' + escapeHtml(lead.organization || lead.name) + '<div class="text-xs text-slate-500">' + escapeHtml(lead.email) + '</div>' + codeLine + '</td><td class="p-3">' + escapeHtml(lead.role) + '</td><td class="p-3"><select data-lead="' + lead.id + '" class="border rounded p-1">' + ["new_lead","qualified","consultation_scheduled","consultation_completed","proposal_sent","won","lost","active_client","completed","follow_up"].map(function (stage) {
           return '<option' + (stage === lead.stage ? " selected" : "") + '>' + stage + '</option>';
         }).join("") + '</select></td><td class="p-3">' + escapeHtml(lead.serviceInterest || "") + '</td><td class="p-3">' + escapeHtml(lead.followUpAt || "—") + '</td></tr>';
       }).join("") + '</tbody></table></div></section>'
