@@ -418,3 +418,61 @@ test("CORS allows the production website origin on API routes", async () => {
     await ctx.stop();
   }
 });
+
+test("intake stores NAICS and NIGP on the lead and does not send mail", async () => {
+  const notices = [];
+  const mailer = {
+    configured: false,
+    async notify(submission) {
+      notices.push(submission);
+      return { sent: false, customerSent: false, ownerSent: false, reason: "not_configured" };
+    },
+  };
+  const ctx = await start({ mailer });
+  try {
+    const file = await fetch(ctx.base + "/assets/codes/naics-2022.json");
+    assert.equal(file.status, 200);
+    assert.match(file.headers.get("content-type") || "", /json/);
+    const naics = [
+      "541511 — Custom Computer Programming Services",
+      "541512 — Computer Systems Design Services",
+    ].join("\n");
+    const nigp = ["910-39 — visitor note", "905"].join("\n");
+    const intake = {
+      ...customer({ email: "codes.customer@example.com" }),
+      businessCity: "Katy",
+      businessState: "TX",
+      serviceArea: "Texas",
+      businessDescription: "Software and facilities support.",
+      industry: "Professional services",
+      serviceInterest: "free-consultation",
+      contractingLevel: ["federal", "state"],
+      naics,
+      nigp,
+    };
+    const saved = await api(ctx.base, "POST", "/api/intake", intake);
+    assert.equal(saved.status, 201);
+    assert.equal(saved.data.email.sent, false);
+    assert.equal(notices.length, 1);
+    assert.match(notices[0].summaryLines.join("\n"), /NAICS: 541511 — Custom Computer Programming Services; 541512 — Computer Systems Design Services/);
+    assert.match(notices[0].summaryLines.join("\n"), /NIGP: 910-39 — visitor note; 905/);
+
+    const rejected = await api(ctx.base, "POST", "/api/intake", {
+      ...intake,
+      email: "bad.code@example.com",
+      naics: "000000",
+    });
+    assert.equal(rejected.status, 400);
+
+    const login = await api(ctx.base, "POST", "/api/auth/login", { password: "test-dashboard-password" });
+    const cookie = login.headers.get("set-cookie").split(";")[0];
+    const dash = await api(ctx.base, "GET", "/api/dashboard", null, { cookie });
+    const lead = dash.data.leads.find((item) => item.email === "codes.customer@example.com");
+    assert.ok(lead);
+    assert.equal(lead.intake.naics, naics);
+    assert.equal(lead.intake.nigp, nigp);
+    assert.equal(dash.data.leads.some((item) => item.email === "bad.code@example.com"), false);
+  } finally {
+    await ctx.stop();
+  }
+});

@@ -178,7 +178,7 @@ test("HubSpot tracking is on public pages and off the private dashboards", () =>
 test("sitemap lists the public pages and skips the dashboard", () => {
   const sitemap = read("sitemap.xml");
   assert.equal(sitemap.includes("dashboard.html"), false);
-  for (const file of ["services.html", "packages.html", "consult.html", "intake.html", "vendors.html", "about.html", "contact.html"]) {
+  for (const file of ["services.html", "packages.html", "consult.html", "codes.html", "intake.html", "vendors.html", "about.html", "contact.html"]) {
     assert.equal(sitemap.includes(file), true);
   }
 });

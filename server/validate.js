@@ -1,3 +1,4 @@
+import { normalizeNaics, normalizeNigp } from "./codes.js";
 import { PACKAGES } from "./packages.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -144,8 +145,8 @@ export function validateIntake(body) {
     industry: cleanText(body.industry, 120, { required: true, label: "Industry" }),
     serviceInterest: cleanChoice(body.serviceInterest, SERVICE_INTERESTS, "Service interest", { required: true }),
     contractingLevel: contracting,
-    naics: cleanText(body.naics, 120),
-    nigp: cleanText(body.nigp, 120),
+    naics: normalizeNaics(body.naics),
+    nigp: normalizeNigp(body.nigp),
     uei: cleanText(body.uei, 20),
     cage: cleanText(body.cage, 10),
     registrations: cleanText(body.registrations, 1000),
