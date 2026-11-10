@@ -176,6 +176,21 @@ test("HubSpot tracking is on public pages and off the private dashboards", () =>
   assert.match(read("privacy.html"), /This site uses HubSpot to manage inquiries\./);
 });
 
+test("public pages and client scripts do not name Katy", () => {
+  const files = [
+    ...htmlFiles,
+    ...fs.readdirSync(path.join(root, "assets/js")).map((file) => path.join("assets/js", file)),
+  ];
+  for (const file of files) {
+    assert.equal(/katy/i.test(read(file)), false, file);
+  }
+  assert.match(read("index.html"), /Veteran-led consulting · Texas/);
+  assert.match(read("about.html"), /consulting firm in Texas/);
+  assert.match(read("contact.html"), /Based in Texas/);
+  assert.match(read("assets/js/forms.js"), /such as Dallas, TX/);
+  assert.match(read("contact.html"), /\(281\) 954-5167/);
+});
+
 test("sitemap lists the public pages and skips the dashboard", () => {
   const sitemap = read("sitemap.xml");
   assert.equal(sitemap.includes("dashboard.html"), false);
