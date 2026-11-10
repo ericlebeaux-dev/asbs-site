@@ -445,6 +445,7 @@ function health(config, calendar, mailer) {
     minimumNoticeHours: config.minNoticeHours,
     bufferMinutes: config.bufferMinutes,
     bookingHorizonDays: HORIZON_DAYS,
+    intakeRevision: "2026-11-10-step1",
   };
 }
 
