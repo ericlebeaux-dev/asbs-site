@@ -128,25 +128,52 @@ function contactBase(body) {
   };
 }
 
+function intakeLocation(body) {
+  const city = cleanText(body.businessCity, 80);
+  const state = cleanText(body.businessState, 40);
+  if (city && state) return { businessCity: city, businessState: state };
+  if (city || state) throw httpError(400, "Enter both a city and a state.", ["Where the business is based"]);
+  const based = cleanText(body.based, 120, { required: true, label: "Where the business is based" });
+  const comma = based.lastIndexOf(",");
+  const parsedCity = comma > 0 ? based.slice(0, comma).trim() : "";
+  const parsedState = comma > 0 ? based.slice(comma + 1).trim() : "";
+  if (!parsedCity || !parsedState || parsedCity.length > 80 || parsedState.length > 40) {
+    throw httpError(400, "Enter a city and state, such as Katy, TX.", ["Where the business is based"]);
+  }
+  return { businessCity: parsedCity, businessState: parsedState };
+}
+
+function assertContracting(levels) {
+  const government = levels.some((level) => level === "federal" || level === "state" || level === "local");
+  if (government && (levels.includes("none") || levels.includes("unsure"))) {
+    throw httpError(400, "Not pursuing contracts and Not sure cannot be combined with Federal, State, or Local.", ["Contracting interest"]);
+  }
+  return levels;
+}
+
 export function validateIntake(body) {
   const contact = contactBase(body);
-  const contracting = cleanList(
+  const contracting = assertContracting(cleanList(
     body.contractingLevel,
     ["federal", "state", "local", "none", "unsure"],
     "Contracting interest",
-  );
+  ));
+  const location = intakeLocation(body);
+  const leadSource = body.leadSource == null
+    ? "website"
+    : cleanChoice(body.leadSource, LEAD_SOURCES, "Lead source");
   return {
     ...contact,
     role: "customer",
-    businessCity: cleanText(body.businessCity, 80, { required: true, label: "Business city" }),
-    businessState: cleanText(body.businessState, 40, { required: true, label: "Business state" }),
-    serviceArea: cleanText(body.serviceArea, 160, { required: true, label: "Service area" }),
-    businessDescription: cleanText(body.businessDescription, 2000, { required: true, label: "Business description" }),
-    industry: cleanText(body.industry, 120, { required: true, label: "Industry" }),
+    ...location,
+    serviceArea: cleanText(body.serviceArea, 160),
+    businessDescription: cleanText(body.businessDescription, 2000),
+    industry: cleanText(body.industry, 120),
     serviceInterest: cleanChoice(body.serviceInterest, SERVICE_INTERESTS, "Service interest", { required: true }),
     contractingLevel: contracting,
     naics: normalizeNaics(body.naics),
     nigp: normalizeNigp(body.nigp),
+    code_description: cleanText(body.code_description, 500),
     uei: cleanText(body.uei, 20),
     cage: cleanText(body.cage, 10),
     registrations: cleanText(body.registrations, 1000),
@@ -156,7 +183,7 @@ export function validateIntake(body) {
     timeline: cleanText(body.timeline, 160),
     budgetRange: cleanChoice(body.budgetRange, BUDGET_RANGES, "Budget range"),
     consultationType: cleanText(body.consultationType, 40),
-    leadSource: cleanChoice(body.leadSource, LEAD_SOURCES, "Lead source") || "website",
+    leadSource,
     packageId: cleanText(body.packageId, 40),
     notes: cleanText(body.notes, 2000),
   };

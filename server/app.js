@@ -152,6 +152,7 @@ async function routeApi(req, res, url, ctx) {
         `Interest: ${fields.serviceInterest}`,
         codeSummary("NAICS", fields.naics),
         codeSummary("NIGP", fields.nigp),
+        fields.code_description ? `Work described: ${fields.code_description}` : "",
       ].filter(Boolean),
     });
     await remember(store, config, "intake");

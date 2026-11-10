@@ -40,6 +40,17 @@ What the site does instead:
 
 No paid API and no NIGP subscription were added.
 
+## Suggestion providers
+
+The “Describe what you do” box searches as the visitor types. The wait is 250 milliseconds. The search runs in the browser against the NAICS file already loaded for the picker. It does not call a paid API, and it does not call the network again for each keystroke.
+
+`assets/js/suggest.js` keeps two providers:
+
+- `naics` is enabled. It matches the local 2022 titles and codes.
+- `nigp` is disabled. `search()` returns an empty list and the file contains no NIGP titles. A later licensed source would replace that provider’s `search` function and set `enabled` to true. Until then, the page tells the visitor that ASBS will match NIGP codes from the description after review.
+
+The description is stored as `intake.code_description` (500 characters or fewer).
+
 ## How an intake stores the codes
 
 The intake form posts JSON to `POST /api/intake` on the ASBS server. That is the record the dashboard reads. There is no Jotform and no separate form backend.
@@ -48,8 +59,8 @@ The form fields are the existing names:
 
 | Field | Element | Stored on the lead |
 | --- | --- | --- |
-| `naics` | Visible textarea, not `type="hidden"` | `lead.intake.naics` |
-| `nigp` | Visible textarea, not `type="hidden"` | `lead.intake.nigp` |
+| `naics` | Read-only textarea in the form, not `type="hidden"` | `lead.intake.naics` |
+| `nigp` | Read-only textarea in the form, not `type="hidden"` | `lead.intake.nigp` |
 
 HubSpot’s tracking script is already on the public pages and skips hidden inputs, so these values stay in visible named fields. This change does not edit the HubSpot account.
 
