@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Client intake | American Standard Business Solutions</title>
-<meta name="description" content="ASBS client intake for consulting on growth, readiness, and contracting opportunities. Submitting this form does not hire ASBS.">
+<title>Request a free consultation | American Standard Business Solutions</title>
+<meta name="description" content="Request a free ASBS consultation. The first step takes about a minute. Extra business details are optional. Submitting this form does not hire ASBS.">
 <link rel="canonical" href="https://www.americanstandardbusinesssolutions.com/intake.html">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="icon" href="assets/favicon.ico" sizes="any">
@@ -35,99 +35,166 @@
   </div>
 </header>
 <main id="main">
-  <section class="page-intro">
-    <div class="wrap">
-      <p class="eyebrow">Intake</p>
-      <h1>Client intake</h1>
-      <p class="narrow">Tell ASBS enough to prepare for a conversation about growth, readiness, or a contracting opportunity. Completing this form does not hire ASBS, does not authorize ASBS to submit a registration or bid, and does not authorize ASBS to buy anything for you. Do not include a Social Security number, a password, a bank account, or a copy of an identity document.</p>
-      <p>Prefer to talk first? <a href="consult.html">Request a free consultation</a>. NAICS codes can be browsed on the <a href="codes.html">codes reference page</a>.</p>
-    </div>
-  </section>
-  <section class="section">
-    <div class="wrap">
-      <div id="formAlert" hidden role="alert"></div>
-      <form id="intakeForm" class="form-card form-grid two">
-        <label>Contact name *<input name="name" required autocomplete="name"></label>
-        <label>Business name *<input name="organization" required autocomplete="organization"></label>
-        <label>Email *<input type="email" name="email" required autocomplete="email"></label>
-        <label>Phone *<input type="tel" name="phone" required autocomplete="tel"></label>
-        <label>Business city *<input name="businessCity" required></label>
-        <label>Business state *<input name="businessState" required></label>
-        <label class="full">Where you operate *<input name="serviceArea" required placeholder="Cities, states, or markets you serve"></label>
-        <label>Industry *<input name="industry" required></label>
-        <label>How you heard about ASBS
-          <select name="leadSource"><option value="website">Website</option><option value="search">Search</option><option value="referral">Referral</option><option value="event">Event</option><option value="other">Other</option></select>
-        </label>
-        <label class="full">Business description *<textarea name="businessDescription" required rows="3"></textarea></label>
-        <label class="full">What do you want help with? *
-          <select name="serviceInterest" required>
-            <option value="">Select one</option>
-            <option value="free-consultation">Free consultation</option>
-            <option value="operations">Growth, expansion, and readiness</option>
-            <option value="contracting-readiness">Government contracting opportunities</option>
-            <option value="procurement-consulting">Commercial contracting opportunities</option>
-            <option value="supply-chain">Operational readiness</option>
-            <option value="other">Something else</option>
-          </select>
-        </label>
-        <fieldset class="full">
-          <legend>Contracting interest</legend>
-          <div class="checks">
-            <label><input type="checkbox" name="contractingLevel" value="federal"> Federal</label>
-            <label><input type="checkbox" name="contractingLevel" value="state"> State</label>
-            <label><input type="checkbox" name="contractingLevel" value="local"> Local</label>
-            <label><input type="checkbox" name="contractingLevel" value="unsure"> Not sure</label>
-            <label><input type="checkbox" name="contractingLevel" value="none"> Not pursuing contracts</label>
+  <section class="section intake-section">
+    <div class="wrap narrow-form">
+      <div id="draftBanner" class="draft-banner" hidden>
+        <p id="draftStatus">A draft of this request is saved in this browser.</p>
+        <div class="step-actions">
+          <button type="button" class="button secondary" id="resumeDraft">Resume</button>
+          <button type="button" class="button secondary" id="clearDraft">Clear my draft</button>
+        </div>
+      </div>
+      <div id="formAlert" role="alert" hidden></div>
+      <div id="stepChrome" class="step-chrome">
+        <p class="eyebrow">No charge</p>
+        <p id="stepLabel">Step 1 of 2</p>
+        <p id="stepNote" class="muted">About a minute. Office hours are Monday–Friday, 8:00 a.m.–5:00 p.m. Central.</p>
+        <div id="stepProgress" class="step-bar" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="1" aria-valuetext="Step 1 of 2"><span></span></div>
+      </div>
+      <form id="intakeForm" class="form-card" novalidate>
+        <div id="step1" data-step="1">
+          <h1 id="step1Heading" tabindex="-1">Request a free consultation</h1>
+          <p>A working conversation about growth, readiness, or a contracting opportunity. It does not hire ASBS, and it does not authorize a registration, a bid, or a purchase. We’ll confirm a time by email or phone. Do not include a Social Security number, a password, a bank account, or an identity document.</p>
+          <div class="form-grid two">
+            <label>Contact name *<input name="name" autocomplete="name" required></label>
+            <label>Business name *<input name="organization" autocomplete="organization" required></label>
+            <label>Email *<input type="email" name="email" autocomplete="email" required></label>
+            <label>Phone *<input type="tel" name="phone" autocomplete="tel" required></label>
+            <label>Where is the business based? *<input name="based" autocomplete="address-level2" required placeholder="City, ST" aria-describedby="basedHelp"></label>
+            <label>What do you want to talk about? *
+              <select name="serviceInterest" required>
+                <option value="">Select one</option>
+                <option value="operations">Growth, expansion, and readiness</option>
+                <option value="contracting-readiness">Government contracting opportunities</option>
+                <option value="procurement-consulting">Commercial contracting opportunities</option>
+                <option value="supply-chain">Operational readiness</option>
+                <option value="other">Something else</option>
+              </select>
+            </label>
+            <p id="basedHelp" class="field-help full">City and state are enough for now.</p>
+            <label class="full">Anything we should know before we talk? <span class="opt">Optional</span>
+              <textarea name="notes" rows="3" placeholder="A sentence or two is plenty. You can skip this."></textarea>
+            </label>
+            <label class="consent full"><input type="checkbox" name="consent" required> I agree that ASBS may contact me about this request. I understand this is not a purchase and not permission for ASBS to act on my behalf.</label>
           </div>
-        </fieldset>
-        <div class="code-picker full" data-code-picker="naics">
-          <p class="code-picker-title" id="naicsPickerTitle">NAICS codes</p>
-          <p class="muted" id="naicsHelp">Optional. Search the 2022 Census list and add up to 20 six-digit codes. For example, 541511 — Custom Computer Programming Services. Arrow keys move through matches. Enter adds a code and does not submit the form. <a href="codes.html#naics">Browse the full list</a>.</p>
-          <ul class="code-chips" data-chips hidden></ul>
-          <label id="naicsSearchLabel" for="naicsSearch">Search NAICS codes</label>
-          <input id="naicsSearch" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="naicsListbox" aria-describedby="naicsHelp naicsMatch" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Code or words from the title">
-          <ul id="naicsListbox" class="code-list" role="listbox" aria-label="NAICS matches" hidden></ul>
-          <p id="naicsMatch" class="code-match" data-match aria-live="polite"></p>
-          <p class="sr-only" data-live aria-live="polite"></p>
-          <label for="naics">NAICS codes included with this intake
-            <textarea id="naics" name="naics" rows="3" placeholder="One code per line, such as 541511 — Custom Computer Programming Services"></textarea>
-          </label>
+          <div class="step-actions">
+            <button type="button" class="button" id="continueStep">Continue</button>
+            <button type="button" class="button secondary" id="skipStep">Skip optional details and send this request</button>
+          </div>
         </div>
-        <div class="code-picker full" data-code-picker="nigp">
-          <p class="code-picker-title" id="nigpPickerTitle">NIGP codes</p>
-          <p class="muted" id="nigpHelp">Optional. This site does not copy the NIGP list. Look up a class or class-item, then type a 3-digit class or a class-item shaped like 123-45. You may add a short note you write yourself. Enter adds the code and does not submit the form. <a href="https://commbook.app.cpa.state.tx.us/" target="_blank" rel="noopener noreferrer">Search the Texas Comptroller NIGP Commodity Book</a>.</p>
-          <ul class="code-chips" data-chips hidden></ul>
-          <label id="nigpSearchLabel" for="nigpSearch">Add an NIGP code</label>
-          <input id="nigpSearch" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="nigpListbox" aria-describedby="nigpHelp nigpMatch" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="3 digits, or 3 digits-2 digits">
-          <ul id="nigpListbox" class="code-list" role="listbox" aria-label="NIGP code to add" hidden></ul>
-          <p id="nigpMatch" class="code-match" data-match aria-live="polite"></p>
-          <p class="sr-only" data-live aria-live="polite"></p>
-          <label for="nigp">NIGP codes included with this intake
-            <textarea id="nigp" name="nigp" rows="3" placeholder="One code per line. A note after a dash is stored only as you typed it."></textarea>
-          </label>
-          <noscript><p>Code search needs JavaScript. You can still type codes in the boxes above, or call (281) 954-5167.</p></noscript>
+        <div id="step2" data-step="2" hidden>
+          <p class="eyebrow">Optional</p>
+          <h2 id="step2Heading" tabindex="-1">Help us prepare, if you can</h2>
+          <p>None of this is required to request the conversation. Skip anything you don’t have. We can collect the rest after we talk.</p>
+          <div class="form-grid two">
+            <label>Where you operate <span class="opt">Optional</span><input name="serviceArea" placeholder="Cities, states, or markets you serve"></label>
+            <label>Industry <span class="opt">Optional</span><input name="industry"></label>
+            <label class="full">Short description of the business <span class="opt">Optional</span>
+              <textarea name="businessDescription" rows="3"></textarea>
+            </label>
+            <fieldset class="full">
+              <legend>Are you pursuing government contracts? <span class="opt">Optional</span></legend>
+              <div class="checks">
+                <label><input type="checkbox" name="contractingLevel" value="federal"> Federal</label>
+                <label><input type="checkbox" name="contractingLevel" value="state"> State</label>
+                <label><input type="checkbox" name="contractingLevel" value="local"> Local</label>
+                <label><input type="checkbox" name="contractingLevel" value="unsure"> Not sure</label>
+                <label><input type="checkbox" name="contractingLevel" value="none"> Not pursuing contracts</label>
+              </div>
+            </fieldset>
+            <div id="govCodes" class="full" hidden>
+              <div class="code-picker" data-code-picker="naics">
+                <p class="code-picker-title" id="naicsPickerTitle">NAICS codes <span class="opt">Optional</span></p>
+                <p class="code-help" id="naicsHelp">Search by code or keyword; add up to 20. <a class="code-source" href="codes.html#naics">Full list</a></p>
+                <p class="sr-only" id="naicsKeys">Arrow keys move through matches. Enter adds a code and does not submit the form.</p>
+                <ul class="code-chips" data-chips hidden></ul>
+                <div class="combo">
+                  <label class="sr-only" id="naicsSearchLabel" for="naicsSearch">Search NAICS codes</label>
+                  <svg class="combo-search" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.25" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M12.5 12.5L17 17" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                  <input id="naicsSearch" class="combo-input" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="naicsListbox" aria-labelledby="naicsSearchLabel" aria-describedby="naicsHelp naicsKeys naicsMatch" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search by code or keyword">
+                  <button type="button" class="combo-toggle" data-chevron aria-expanded="false" aria-controls="naicsListbox" aria-label="Show NAICS matches"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5L10 12.5L15 7.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <ul id="naicsListbox" class="code-list" role="listbox" aria-label="NAICS matches" hidden></ul>
+                </div>
+                <p id="naicsMatch" class="code-match" data-match aria-live="polite"></p>
+                <p class="sr-only" data-live aria-live="polite"></p>
+                <p class="code-summary-label" data-count hidden>Selected: 0</p>
+                <textarea id="naics" class="code-saved" name="naics" rows="1" aria-label="NAICS codes included with this intake"></textarea>
+              </div>
+              <div class="code-pair">
+                <div class="code-picker" data-code-picker="nigp">
+                  <p class="code-picker-title" id="nigpPickerTitle">NIGP codes <span class="opt">Optional</span></p>
+                  <p class="code-help" id="nigpHelp">Type a class or class-item; add up to 20. <a class="code-source" href="https://commbook.app.cpa.state.tx.us/" target="_blank" rel="noopener noreferrer">Official lookup</a></p>
+                  <p class="sr-only" id="nigpKeys">Enter adds the code and does not submit the form. Example: 123-45.</p>
+                  <ul class="code-chips" data-chips hidden></ul>
+                  <div class="combo">
+                    <label class="sr-only" id="nigpSearchLabel" for="nigpSearch">Add an NIGP code</label>
+                    <svg class="combo-search" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.25" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M12.5 12.5L17 17" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                    <input id="nigpSearch" class="combo-input" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="nigpListbox" aria-labelledby="nigpSearchLabel" aria-describedby="nigpHelp nigpKeys nigpMatch" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Example: 123-45">
+                    <button type="button" class="combo-toggle" data-chevron aria-expanded="false" aria-controls="nigpListbox" aria-label="Show NIGP entry"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5L10 12.5L15 7.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <ul id="nigpListbox" class="code-list" role="listbox" aria-label="NIGP code to add" hidden></ul>
+                  </div>
+                  <p id="nigpMatch" class="code-match" data-match aria-live="polite"></p>
+                  <p class="sr-only" data-live aria-live="polite"></p>
+                  <p class="code-summary-label" data-count hidden>Selected: 0</p>
+                  <textarea id="nigp" class="code-saved" name="nigp" rows="1" aria-label="NIGP codes included with this intake"></textarea>
+                </div>
+                <div class="code-describe">
+                  <label for="codeDescription">Not sure of your codes? Describe what you do. <span class="opt">Optional</span></label>
+                  <textarea id="codeDescription" name="code_description" rows="4" aria-autocomplete="list" aria-expanded="false" aria-controls="codeSuggestList" aria-describedby="codeDescribeHelp codeSuggestStatus" placeholder="Start typing what the business does"></textarea>
+                  <p id="codeDescribeHelp" class="code-help">ASBS will match NIGP codes from this description after review. This page does not list NIGP titles.</p>
+                  <p id="codeSuggestStatus" class="code-match" aria-live="polite"></p>
+                  <ul id="codeSuggestList" class="suggest-list" role="listbox" aria-label="NAICS suggestions from your description" hidden></ul>
+                </div>
+              </div>
+              <label>Do you already hold certifications? <span class="opt">Optional</span>
+                <select name="holdsCertifications">
+                  <option value="">Select one</option>
+                  <option value="yes">Yes, I’ll list them</option>
+                  <option value="no">No</option>
+                  <option value="unsure">Not sure</option>
+                </select>
+              </label>
+              <div id="certFields" hidden>
+                <label>Certifications <span class="opt">Optional</span>
+                  <textarea name="certifications" rows="2" placeholder="Names are enough, such as HUB or SBE."></textarea>
+                </label>
+              </div>
+            </div>
+            <label>When do you want to be ready? <span class="opt">Optional</span><input name="timeline"></label>
+            <label>Preferred call length <span class="opt">Optional</span>
+              <select name="consultationType">
+                <option value="">Select one</option>
+                <option value="discovery_15">Free 15-minute introduction</option>
+                <option value="qualified_30">Free 30-minute working session</option>
+                <option value="onboarding_45">Free 45-minute session</option>
+              </select>
+            </label>
+            <label class="full">How did you hear about ASBS? <span class="opt">Optional</span>
+              <select name="leadSource">
+                <option value="">Select one</option>
+                <option value="website">Website</option>
+                <option value="search">Search</option>
+                <option value="referral">Referral</option>
+                <option value="event">Event</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+          </div>
+          <div class="step-actions">
+            <button type="submit" class="button" id="submitIntake">Submit and request the consultation</button>
+            <button type="button" class="button secondary" id="backStep">Back</button>
+            <button type="button" class="button secondary" id="saveDraft">Save and finish later</button>
+          </div>
         </div>
-        <div id="registrationFields" class="full form-grid two" hidden>
-          <label>UEI, if applicable<input name="uei"></label>
-          <label>CAGE, if applicable<input name="cage"></label>
-          <label class="full">Existing registrations<textarea name="registrations" rows="2"></textarea></label>
-          <label class="full">Certifications<textarea name="certifications" rows="2"></textarea></label>
-        </div>
-        <label class="full">Prior contracting experience<textarea name="priorExperience" rows="3"></textarea></label>
-        <label class="full">Current business challenges<textarea name="challenges" rows="3"></textarea></label>
-        <label class="full">Project timeline<input name="timeline"></label>
-        <div id="budgetWrap" hidden>
-          <label>Budget range, if you want to share it
-            <select name="budgetRange"><option value="">Select</option><option value="not-sure">Not sure</option><option value="under-1000">Under $1,000</option><option value="1000-5000">$1,000–$5,000</option><option value="5000-15000">$5,000–$15,000</option><option value="over-15000">Over $15,000</option><option value="prefer-to-discuss">Prefer to discuss</option></select>
-          </label>
-        </div>
-        <label class="full">Preferred consultation
-          <select name="consultationType"><option value="">No preference yet</option><option value="discovery_15">Free introductory call</option><option value="qualified_30">Free longer working session</option><option value="onboarding_45">Free session before any written scope</option></select>
-        </label>
-        <label class="consent full"><input type="checkbox" name="consent" required> I agree that ASBS may contact me about this intake. I understand it is not a purchase and not permission for ASBS to act on my behalf.</label>
         <div class="hp-field" aria-hidden="true"><label>Company URL<input name="company_url" tabindex="-1" autocomplete="off"></label></div>
-        <button type="submit" class="button">Submit intake</button>
       </form>
+      <div id="intakeConfirm" class="form-card confirm-card" tabindex="-1" hidden>
+        <p class="eyebrow">No charge</p>
+        <h2>Request received</h2>
+        <p id="confirmText"></p>
+        <p>This does not hire ASBS, reserve a time, or authorize a registration, a bid, or a purchase. ASBS will confirm a time by email or phone.</p>
+        <p><a href="consult.html">Free consultation</a> · <a href="index.html">Home</a></p>
+      </div>
     </div>
   </section>
 </main>
@@ -139,8 +206,9 @@
   </div>
 </footer>
 <script src="assets/js/asbs.js"></script>
-<script src="assets/js/forms.js"></script>
+<script src="assets/js/suggest.js"></script>
 <script src="assets/js/codes.js"></script>
+<script src="assets/js/forms.js"></script>
 <script type="text/javascript" id="hs-script-loader" async defer src="//js-na2.hs-scripts.com/247883336.js"></script>
 </body>
 </html>

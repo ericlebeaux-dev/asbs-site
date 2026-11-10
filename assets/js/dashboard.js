@@ -72,6 +72,7 @@
         var codeBits = [];
         if (lead.intake && lead.intake.naics) codeBits.push("NAICS " + String(lead.intake.naics).replace(/\n/g, "; "));
         if (lead.intake && lead.intake.nigp) codeBits.push("NIGP " + String(lead.intake.nigp).replace(/\n/g, "; "));
+        if (lead.intake && lead.intake.code_description) codeBits.push("Work: " + String(lead.intake.code_description));
         var codeLine = codeBits.length ? '<div class="text-xs text-slate-500">' + escapeHtml(codeBits.join(" · ")) + '</div>' : "";
         return '<tr class="border-t border-slate-100"><td class="p-3">' + escapeHtml(lead.organization || lead.name) + '<div class="text-xs text-slate-500">' + escapeHtml(lead.email) + '</div>' + codeLine + '</td><td class="p-3">' + escapeHtml(lead.role) + '</td><td class="p-3"><select data-lead="' + lead.id + '" class="border rounded p-1">' + ["new_lead","qualified","consultation_scheduled","consultation_completed","proposal_sent","won","lost","active_client","completed","follow_up"].map(function (stage) {
           return '<option' + (stage === lead.stage ? " selected" : "") + '>' + stage + '</option>';

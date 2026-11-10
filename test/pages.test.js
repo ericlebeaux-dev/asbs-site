@@ -92,8 +92,9 @@ test("intake offers consulting topics without the withdrawn package menu", () =>
     }
   }
   const intake = read("intake.html");
+  assert.equal(SERVICE_INTERESTS.includes("free-consultation"), true);
+  assert.equal(intake.includes('value="free-consultation"'), false);
   for (const choice of [
-    ["free-consultation", "Free consultation"],
     ["operations", "Growth, expansion, and readiness"],
     ["contracting-readiness", "Government contracting opportunities"],
     ["procurement-consulting", "Commercial contracting opportunities"],

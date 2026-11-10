@@ -476,3 +476,67 @@ test("intake stores NAICS and NIGP on the lead and does not send mail", async ()
     await ctx.stop();
   }
 });
+
+test("step 1 alone is a valid intake and a full intake keeps the work description", async () => {
+  const ctx = await start({
+    mailer: { configured: false, async notify() { return { sent: false, reason: "not_configured" }; } },
+  });
+  try {
+    const step1 = await api(ctx.base, "POST", "/api/intake", {
+      ...customer({ email: "step1.only@example.com" }),
+      based: "Katy, TX",
+      serviceInterest: "operations",
+      notes: "Opening a second location.",
+      leadSource: "",
+    });
+    assert.equal(step1.status, 201);
+    assert.equal(step1.data.email.sent, false);
+
+    const conflict = await api(ctx.base, "POST", "/api/intake", {
+      ...customer({ email: "conflict.codes@example.com" }),
+      based: "Katy, TX",
+      serviceInterest: "contracting-readiness",
+      contractingLevel: ["federal", "none"],
+    });
+    assert.equal(conflict.status, 400);
+
+    const full = await api(ctx.base, "POST", "/api/intake", {
+      ...customer({ email: "full.intake@example.com" }),
+      businessCity: "Katy",
+      businessState: "TX",
+      serviceInterest: "contracting-readiness",
+      contractingLevel: ["federal", "local"],
+      serviceArea: "Greater Houston",
+      industry: "Software",
+      businessDescription: "Custom software for offices.",
+      naics: "541511",
+      nigp: "123-45",
+      code_description: "We write custom software for small offices.",
+      uei: "Z12345678901",
+      timeline: "Next quarter",
+      leadSource: "referral",
+    });
+    assert.equal(full.status, 201);
+
+    const login = await api(ctx.base, "POST", "/api/auth/login", { password: "test-dashboard-password" });
+    const cookie = login.headers.get("set-cookie").split(";")[0];
+    const dash = await api(ctx.base, "GET", "/api/dashboard", null, { cookie });
+    const first = dash.data.leads.find((item) => item.email === "step1.only@example.com");
+    const second = dash.data.leads.find((item) => item.email === "full.intake@example.com");
+    assert.equal(first.intake.businessCity, "Katy");
+    assert.equal(first.intake.businessState, "TX");
+    assert.equal(first.intake.serviceArea, "");
+    assert.equal(first.intake.industry, "");
+    assert.equal(first.intake.businessDescription, "");
+    assert.equal(first.intake.code_description, "");
+    assert.equal(first.intake.notes, "Opening a second location.");
+    assert.equal(first.intake.leadSource, "");
+    assert.equal(second.intake.code_description, "We write custom software for small offices.");
+    assert.match(second.intake.naics, /541511 — Custom Computer Programming Services/);
+    assert.equal(second.intake.nigp, "123-45");
+    assert.equal(second.intake.uei, "Z12345678901");
+    assert.equal(dash.data.leads.some((item) => item.email === "conflict.codes@example.com"), false);
+  } finally {
+    await ctx.stop();
+  }
+});

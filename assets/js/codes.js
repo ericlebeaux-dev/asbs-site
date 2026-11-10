@@ -210,6 +210,62 @@
     watcher.observe(root);
   }
 
+  function highlight(node, text, query) {
+    node.replaceChildren();
+    var source = String(text || "");
+    var words = String(query || "").trim().toLowerCase().split(/\s+/).filter(function (word) {
+      return word.length >= 2 || /^\d+$/.test(word);
+    });
+    if (!words.length) {
+      node.textContent = source;
+      return;
+    }
+    var lower = source.toLowerCase();
+    var ranges = [];
+    words.forEach(function (word) {
+      var from = 0;
+      var at = lower.indexOf(word, from);
+      while (at !== -1) {
+        ranges.push([at, at + word.length]);
+        from = at + word.length;
+        at = lower.indexOf(word, from);
+      }
+    });
+    ranges.sort(function (a, b) { return a[0] - b[0] || b[1] - a[1]; });
+    var merged = [];
+    ranges.forEach(function (range) {
+      var last = merged[merged.length - 1];
+      if (!last || range[0] > last[1]) merged.push([range[0], range[1]]);
+      else last[1] = Math.max(last[1], range[1]);
+    });
+    var cursor = 0;
+    merged.forEach(function (range) {
+      if (range[0] > cursor) node.appendChild(document.createTextNode(source.slice(cursor, range[0])));
+      var mark = document.createElement("mark");
+      mark.className = "code-hit";
+      mark.textContent = source.slice(range[0], range[1]);
+      node.appendChild(mark);
+      cursor = range[1];
+    });
+    if (cursor < source.length) node.appendChild(document.createTextNode(source.slice(cursor)));
+  }
+
+  function iconX() {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
+    svg.setAttribute("aria-hidden", "true");
+    var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M4 4l8 8M12 4L4 12");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "currentColor");
+    path.setAttribute("stroke-width", "1.75");
+    path.setAttribute("stroke-linecap", "round");
+    svg.appendChild(path);
+    return svg;
+  }
+
   function mountPicker(root) {
     var kind = root.getAttribute("data-code-picker");
     var input = root.querySelector("[role=combobox]");
@@ -218,11 +274,15 @@
     var field = root.querySelector("textarea");
     var live = root.querySelector("[data-live]");
     var match = root.querySelector("[data-match]");
+    var count = root.querySelector("[data-count]");
+    var toggle = root.querySelector("[data-chevron]");
     if (!input || !list || !chips || !field) return;
     var selected = [];
     var options = [];
     var active = -1;
     var catalog = null;
+    var query = "";
+    root.classList.add("is-ready", "is-empty");
 
     function lineFor(item) {
       return item.note ? item.code + DASH + item.note : item.code + (item.title ? DASH + item.title : "");
@@ -231,6 +291,14 @@
     function writeField() {
       field.value = selected.map(lineFor).join("\n");
       field.readOnly = true;
+      root.classList.toggle("is-empty", selected.length === 0);
+      if (count) {
+        count.hidden = selected.length === 0;
+        count.textContent = "Selected: " + selected.length;
+      }
+      if (!selected.length) return;
+      field.style.height = "auto";
+      field.style.height = field.scrollHeight + "px";
     }
 
     function renderChips() {
@@ -240,12 +308,23 @@
         var li = document.createElement("li");
         li.className = "code-chip";
         var text = document.createElement("span");
-        var label = item.title ? item.code + " " + item.title : (item.note ? item.code + " " + item.note : item.code);
-        text.textContent = label;
+        text.className = "code-chip-text";
+        var num = document.createElement("span");
+        num.className = "code-num";
+        num.textContent = item.code;
+        text.appendChild(num);
+        var title = item.title || item.note || "";
+        if (title) {
+          var name = document.createElement("span");
+          name.className = "code-chip-title";
+          name.textContent = title;
+          text.appendChild(name);
+        }
+        var label = title ? item.code + " " + title : item.code;
         var button = document.createElement("button");
         button.type = "button";
-        button.textContent = "Remove";
         button.setAttribute("aria-label", "Remove " + label);
+        button.appendChild(iconX());
         button.addEventListener("click", function () {
           selected.splice(index, 1);
           renderChips();
@@ -260,10 +339,19 @@
       writeField();
     }
 
+    function setExpanded(open) {
+      input.setAttribute("aria-expanded", open ? "true" : "false");
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        toggle.setAttribute("aria-label", open ? "Hide matches" : (kind === "naics" ? "Show NAICS matches" : "Show NIGP entry"));
+      }
+      root.classList.toggle("is-open", open);
+    }
+
     function closeList() {
       list.hidden = true;
       list.replaceChildren();
-      input.setAttribute("aria-expanded", "false");
+      setExpanded(false);
       input.removeAttribute("aria-activedescendant");
       options = [];
       active = -1;
@@ -278,18 +366,22 @@
         option.setAttribute("aria-selected", on ? "true" : "false");
       });
       input.setAttribute("aria-activedescendant", options[active].id);
-      var item = options[active];
-      if (item.offsetTop < list.scrollTop) list.scrollTop = item.offsetTop;
-      else if (item.offsetTop + item.offsetHeight > list.scrollTop + list.clientHeight) {
-        list.scrollTop = item.offsetTop + item.offsetHeight - list.clientHeight;
+      if (active === 0) {
+        list.scrollTop = 0;
+        return;
       }
+      var item = options[active];
+      var listRect = list.getBoundingClientRect();
+      var itemRect = item.getBoundingClientRect();
+      if (itemRect.top < listRect.top) list.scrollTop -= listRect.top - itemRect.top;
+      else if (itemRect.bottom > listRect.bottom) list.scrollTop += itemRect.bottom - listRect.bottom;
     }
 
     function already(code) {
       return selected.some(function (item) { return item.code === code; });
     }
 
-    function addItem(item) {
+    function addItem(item, options) {
       if (selected.length >= MAX_ENTRIES) {
         say(live, "20 is the maximum on this form.");
         if (match) match.textContent = "20 is the maximum on this form.";
@@ -310,7 +402,7 @@
       if (match) match.textContent = "";
       var spoken = item.title || item.note || "";
       say(live, "Added " + item.code + (spoken ? ", " + spoken : "") + ". " + selected.length + " selected.");
-      input.focus();
+      if (!options || options.silentFocus !== true) input.focus();
     }
 
     function openOptions(items, labelFor) {
@@ -323,9 +415,9 @@
         option.dataset.code = item.code;
         var num = document.createElement("span");
         num.className = "code-num";
-        num.textContent = item.code;
+        highlight(num, item.code, query);
         var name = document.createElement("span");
-        name.textContent = labelFor(item);
+        highlight(name, labelFor(item), query);
         option.appendChild(num);
         option.appendChild(name);
         option.addEventListener("mousedown", function (event) {
@@ -340,19 +432,19 @@
         return;
       }
       list.hidden = false;
-      input.setAttribute("aria-expanded", "true");
+      setExpanded(true);
       setActive(0);
     }
 
     function filterNaics() {
-      var query = input.value.trim();
+      query = input.value.trim();
       if (!catalog) {
-        if (match) match.textContent = "Loading the Census NAICS list.";
+        if (match) match.textContent = "Loading codes.";
         return;
       }
       if (query.length < 2) {
         closeList();
-        if (match) match.textContent = query ? "Type at least 2 characters." : "";
+        if (match) match.textContent = query ? "Type a code or keyword." : "";
         return;
       }
       var found = catalog.filter(function (entry) { return matchNaics(entry, query) && !already(entry.code); });
@@ -360,15 +452,15 @@
       found = found.slice(0, 8);
       if (!found.length) {
         closeList();
-        if (match) match.textContent = "No 2022 NAICS code matches.";
+        if (match) match.textContent = "No matching code.";
         return;
       }
-      if (match) match.textContent = found.length + (found.length === 1 ? " match. Arrow keys move. Enter adds." : " matches. Arrow keys move. Enter adds.");
+      if (match) match.textContent = "";
       openOptions(found, function (item) { return item.title; });
     }
 
     function filterNigp() {
-      var query = input.value.trim();
+      query = input.value.trim();
       if (!query) {
         closeList();
         if (match) match.textContent = "";
@@ -377,10 +469,10 @@
       var parsed = parseNigp(query);
       if (parsed.error) {
         closeList();
-        if (match) match.textContent = parsed.error;
+        if (match) match.textContent = "Use 3 digits, or 3 digits, a hyphen, and 2 digits.";
         return;
       }
-      if (match) match.textContent = "Enter adds " + parsed.code + ".";
+      if (match) match.textContent = "";
       openOptions([parsed], function (item) {
         return item.note ? "Add with your note: " + item.note : "Add this code";
       });
@@ -420,7 +512,7 @@
       if (kind !== "naics" || catalog || input.dataset.loading === "1") return;
       input.dataset.loading = "1";
       input.setAttribute("aria-busy", "true");
-      if (match) match.textContent = "Loading the Census NAICS list.";
+        if (match) match.textContent = "Loading codes.";
       loadNaics().then(function (data) {
         catalog = data.codes.map(function (row) {
           return { code: row[0], title: row[1], sector: row[2], sectorTitle: sectorTitle(data, row[2]) };
@@ -431,7 +523,7 @@
       }).catch(function () {
         delete input.dataset.loading;
         input.removeAttribute("aria-busy");
-        if (match) match.textContent = "The NAICS list did not load. You can still submit the rest of the form.";
+        if (match) match.textContent = "The code list did not load. You can still submit the rest of the form.";
       });
     });
     input.addEventListener("keydown", function (event) {
@@ -462,6 +554,13 @@
         say(live, "Removed the last code. " + selected.length + " selected.");
       }
     });
+    if (toggle) {
+      toggle.addEventListener("click", function () {
+        input.focus();
+        if (!list.hidden) closeList();
+        else filter();
+      });
+    }
     document.addEventListener("mousedown", function (event) {
       if (!root.contains(event.target)) closeList();
     });
@@ -477,6 +576,22 @@
         }, 0);
       });
     }
+    function hydrate() {
+      var lines = String(field.value || "").split(/\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+      selected = [];
+      lines.forEach(function (line) {
+        var parts = line.split(/\s+[\u2014\u2013-]\s+/);
+        var code = (parts[0] || "").trim();
+        var rest = parts.slice(1).join(" ").trim();
+        if (!code) return;
+        if (kind === "nigp") selected.push({ code: code, note: rest });
+        else selected.push({ code: code, title: rest });
+      });
+      renderChips();
+    }
+
+    root._addCode = function (item, options) { addItem(item, options); };
+    root._hydrate = hydrate;
     renderChips();
   }
 
@@ -485,7 +600,20 @@
       whenVisible(root, function () { mountBrowser(root); });
     });
     document.querySelectorAll("[data-code-picker]").forEach(mountPicker);
+    document.addEventListener("asbs:add-naics", function (event) {
+      var detail = event.detail || {};
+      document.querySelectorAll('[data-code-picker="naics"]').forEach(function (root) {
+        if (typeof root._addCode === "function") root._addCode({ code: detail.code, title: detail.title }, { silentFocus: true });
+      });
+    });
+    document.addEventListener("asbs:hydrate-codes", function () {
+      document.querySelectorAll("[data-code-picker]").forEach(function (root) {
+        if (typeof root._hydrate === "function") root._hydrate();
+      });
+    });
   }
+
+  window.ASBS_CODES = { load: loadNaics };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();

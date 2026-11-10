@@ -76,7 +76,8 @@ test("consultation and intake pages expose the reference and the pickers", () =>
   assert.match(codes, /does not copy/);
   assert.equal(intake.includes('type="hidden"'), false);
   assert.equal((intake.match(/role="combobox"/g) || []).length, 2);
-  assert.equal((intake.match(/role="listbox"/g) || []).length, 2);
+  assert.match(intake, /name="code_description"/);
+  assert.equal((intake.match(/role="listbox"/g) || []).length, 3);
   assert.match(intake, /name="naics"/);
   assert.match(intake, /name="nigp"/);
   assert.match(intake, /data-code-picker="naics"/);
