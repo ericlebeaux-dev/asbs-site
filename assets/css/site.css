@@ -789,6 +789,7 @@ textarea {
 .step-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1.1rem; }
 .form-alert { border-radius: 0.7rem; padding: 0.75rem 0.9rem; margin-bottom: 0.8rem; }
 .form-alert.is-error { background: #fde8e4; color: #6d2018; border: 1px solid #e7b2a8; }
+.form-alert.is-pending { background: #f3e6c4; color: #2b2416; border: 1px solid #e4d3a4; }
 .form-alert.is-ok { background: #e7f2f3; color: var(--asbs-navy); border: 1px solid #b7d4d6; }
 .draft-banner { background: #f3e6c4; color: #2b2416; border-radius: 0.8rem; padding: 0.8rem 1rem; margin-bottom: 0.9rem; }
 .draft-banner p { margin: 0 0 0.5rem; }

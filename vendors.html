@@ -51,7 +51,7 @@
   </section>
   <section class="section">
     <div class="wrap">
-      <div id="formAlert" hidden role="alert"></div>
+      <div id="formAlert" hidden role="status" aria-live="polite"></div>
       <form id="vendorForm" class="form-card form-grid">
         <label>Legal business name *<input name="legalName" required></label>
         <label>Primary contact *<input name="contactName" required></label>
@@ -79,6 +79,7 @@
         <label>Notes<textarea name="notes" rows="2"></textarea></label>
         <label class="consent"><input type="checkbox" name="consent" required> I agree ASBS may store this registration privately and contact me. I understand it does not promise work.</label>
         <div class="hp-field" aria-hidden="true"><label>Company URL<input name="company_url" tabindex="-1" autocomplete="off"></label></div>
+        <div id="turnstileSlot" hidden></div>
         <button type="submit" class="button">Submit private registration</button>
       </form>
     </div>

@@ -51,7 +51,7 @@
           <button type="button" class="button secondary" id="clearDraft">Clear my draft</button>
         </div>
       </div>
-      <div id="formAlert" role="alert" hidden></div>
+      <div id="formAlert" role="status" aria-live="polite" hidden></div>
       <div id="stepChrome" class="step-chrome">
         <p class="eyebrow">No charge</p>
         <p id="stepLabel">Step 1 of 2</p>
@@ -194,6 +194,7 @@
           </div>
         </div>
         <div class="hp-field" aria-hidden="true"><label>Company URL<input name="company_url" tabindex="-1" autocomplete="off"></label></div>
+        <div id="turnstileSlot" hidden></div>
       </form>
       <div id="intakeConfirm" class="form-card confirm-card" tabindex="-1" hidden>
         <p class="eyebrow">No charge</p>
