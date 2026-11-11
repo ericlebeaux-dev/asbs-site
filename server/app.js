@@ -10,6 +10,7 @@ import { HORIZON_DAYS, consultationType, generateSlots } from "./slots.js";
 import { createStore } from "./store.js";
 import { TIME_ZONE, addDaysYmd, formatZoned, zonedParts, zonedTimeToUtc, zonedToday } from "./time.js";
 import { codeSummary } from "./codes.js";
+import { pageUriFromReferer, submitIntakeToHubSpot } from "./hubspot.js";
 import {
   httpError,
   validateBooking,
@@ -54,9 +55,14 @@ export function createApp(options = {}) {
   const store = options.store || createStore(config.dataDir);
   const calendar = options.calendar || calendarFromEnv(config.env);
   const mailer = options.mailer || mailerFromEnv(config.env);
+  const hubspot = {
+    fetchImpl: options.hubspotFetch || globalThis.fetch,
+    timeoutMs: options.hubspotTimeoutMs,
+    log: options.hubspotLog,
+  };
   const limits = new Map();
   const server = http.createServer((req, res) => {
-    handle(req, res, { config, store, calendar, mailer, limits }).catch((error) => {
+    handle(req, res, { config, store, calendar, mailer, limits, hubspot }).catch((error) => {
       sendJson(res, error.status || 500, {
         message: error.status ? error.message : "Something went wrong. Nothing was saved.",
         fields: error.fields || undefined,
@@ -155,12 +161,14 @@ async function routeApi(req, res, url, ctx) {
         fields.code_description ? `Work described: ${fields.code_description}` : "",
       ].filter(Boolean),
     });
+    const hubspotResult = await forwardIntakeToHubSpot(ctx, fields, saved.lead, req);
     await remember(store, config, "intake");
     sendJson(res, saved.duplicate ? 200 : 201, {
       leadId: saved.lead.id,
       duplicate: saved.duplicate,
       stage: saved.lead.stage,
       email: { sent: mail.sent === true },
+      hubspot: { ok: hubspotResult.ok === true, status: Number(hubspotResult.status) || 0 },
       message: saved.duplicate
         ? receipt("We already had a record for this email, so we updated it instead of creating a second one.", mail)
         : receipt("Your intake was received. It does not hire ASBS or authorize any submission on your behalf.", mail),
@@ -445,8 +453,43 @@ function health(config, calendar, mailer) {
     minimumNoticeHours: config.minNoticeHours,
     bufferMinutes: config.bufferMinutes,
     bookingHorizonDays: HORIZON_DAYS,
-    intakeRevision: "2026-11-10-step1",
+    intakeRevision: "2026-11-11-hubspot",
   };
+}
+
+async function forwardIntakeToHubSpot(ctx, fields, lead, req) {
+  const failed = { ok: false, status: 0 };
+  try {
+    const result = await submitIntakeToHubSpot({
+      intake: fields,
+      leadId: lead.id,
+      submittedAt: lead.updatedAt || lead.createdAt,
+      pageUri: pageUriFromReferer(req.headers.referer || req.headers.referrer),
+      env: ctx.config.env,
+      fetchImpl: ctx.hubspot.fetchImpl,
+      timeoutMs: ctx.hubspot.timeoutMs,
+      log: ctx.hubspot.log,
+    });
+    const status = {
+      ok: result.ok === true,
+      status: Number(result.status) || 0,
+      at: new Date().toISOString(),
+    };
+    await ctx.store.setLeadHubSpotStatus(lead.id, status);
+    return status;
+  } catch {
+    console.info(JSON.stringify({
+      event: "hubspot_intake",
+      leadId: lead.id,
+      ok: false,
+      status: 0,
+      error: "unexpected",
+    }));
+    try {
+      await ctx.store.setLeadHubSpotStatus(lead.id, { ...failed, at: new Date().toISOString() });
+    } catch { /* The visitor response still succeeds. */ }
+    return failed;
+  }
 }
 
 async function slotsFor(config, store, calendar, type, range) {

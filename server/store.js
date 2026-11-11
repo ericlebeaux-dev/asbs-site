@@ -273,6 +273,17 @@ export function createStore(dataDir) {
         return booking;
       });
     },
+    setLeadHubSpotStatus(id, hubspotStatus) {
+      return locked(async () => {
+        const data = read();
+        const lead = data.leads.find((item) => item.id === id);
+        if (!lead) return null;
+        lead.hubspotStatus = hubspotStatus;
+        lead.updatedAt = new Date().toISOString();
+        write(data);
+        return lead;
+      });
+    },
     updateLead(id, patch, note) {
       return locked(async () => {
         const data = read();
@@ -372,6 +383,7 @@ function publicLead(lead) {
     notes: lead.notes || [],
     createdAt: lead.createdAt,
     updatedAt: lead.updatedAt,
+    hubspotStatus: lead.hubspotStatus || null,
   };
 }
 

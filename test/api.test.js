@@ -19,13 +19,16 @@ function disconnectedCalendar() {
   };
 }
 
-async function start({ env = {}, calendar = disconnectedCalendar(), password = "test-dashboard-password", mailer } = {}) {
+async function start({ env = {}, calendar = disconnectedCalendar(), password = "test-dashboard-password", mailer, hubspotFetch, hubspotTimeoutMs, hubspotLog } = {}) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "asbs-"));
   const app = createApp({
     dataDir,
     rootDir: path.resolve("."),
     now: () => new Date(NOW),
     calendar,
+    hubspotFetch: hubspotFetch || (async () => new Response("{}", { status: 200 })),
+    ...(hubspotTimeoutMs ? { hubspotTimeoutMs } : {}),
+    ...(hubspotLog ? { hubspotLog } : {}),
     ...(mailer ? { mailer } : {}),
     env: {
       ASBS_ENV: "staging",
@@ -91,7 +94,7 @@ test("health, packages, and static protections", async () => {
     assert.equal(health.data.calendar.connected, false);
     assert.equal(health.data.payments.livePackageCheckout, false);
     assert.equal(health.data.timezone, "America/Chicago");
-    assert.equal(health.data.intakeRevision, "2026-11-10-step1");
+    assert.equal(health.data.intakeRevision, "2026-11-11-hubspot");
 
     const packages = await api(ctx.base, "GET", "/api/packages");
     assert.equal(packages.data.purchasable, false);
