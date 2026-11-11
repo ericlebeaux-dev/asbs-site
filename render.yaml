@@ -9,7 +9,7 @@ services:
     plan: free
     region: oregon
     branch: cursor/asbs-website-completion-0d43
-    autoDeployTrigger: commit
+    autoDeployTrigger: off
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
@@ -29,6 +29,29 @@ services:
         generateValue: true
       # The owner types this in the Render form. Do not commit it.
       - key: ASBS_DASHBOARD_PASSWORD
+        sync: false
+      # Document storage and Documenso. Set these in Render. Do not commit values.
+      - key: DOCS_ENABLED
+        sync: false
+      - key: DOCS_S3_ENDPOINT
+        sync: false
+      - key: DOCS_S3_REGION
+        sync: false
+      - key: DOCS_S3_BUCKET
+        sync: false
+      - key: DOCS_S3_KEY_ID
+        sync: false
+      - key: DOCS_S3_SECRET
+        sync: false
+      - key: DOCS_MAX_BYTES
+        sync: false
+      - key: DOCUMENSO_API_TOKEN
+        sync: false
+      - key: DOCUMENSO_TEMPLATE_ID
+        sync: false
+      - key: DOCUMENSO_BASE_URL
+        sync: false
+      - key: DOCUMENSO_DELETE_COMPLETED
         sync: false
       # Add these later in the Render Environment tab. Leave them out of git.
       # GOOGLE_CLIENT_ID

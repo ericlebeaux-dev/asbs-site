@@ -10,11 +10,15 @@ import { HORIZON_DAYS, consultationType, generateSlots } from "./slots.js";
 import { createStore } from "./store.js";
 import { TIME_ZONE, addDaysYmd, formatZoned, zonedParts, zonedTimeToUtc, zonedToday } from "./time.js";
 import { codeSummary } from "./codes.js";
+import { pageUriFromReferer, submitIntakeToHubSpot } from "./hubspot.js";
+import { checkTurnstile, turnstilePublic } from "./turnstile.js";
+import { handleDocsRequest, serveDocsPage } from "./docs/http.js";
 import {
   httpError,
   validateBooking,
   validateDocument,
   validateInquiry,
+  isQuietSpam,
   validateIntake,
   validateQuote,
   validateVendor,
@@ -54,9 +58,25 @@ export function createApp(options = {}) {
   const store = options.store || createStore(config.dataDir);
   const calendar = options.calendar || calendarFromEnv(config.env);
   const mailer = options.mailer || mailerFromEnv(config.env);
+  const hubspot = {
+    fetchImpl: options.hubspotFetch || globalThis.fetch,
+    timeoutMs: options.hubspotTimeoutMs,
+    log: options.hubspotLog,
+  };
+  const turnstileFetch = options.turnstileFetch || globalThis.fetch;
   const limits = new Map();
   const server = http.createServer((req, res) => {
-    handle(req, res, { config, store, calendar, mailer, limits }).catch((error) => {
+    handle(req, res, {
+      config,
+      store,
+      calendar,
+      mailer,
+      limits,
+      hubspot,
+      turnstileFetch,
+      docsStore: options.docsStore,
+      documensoFetch: options.documensoFetch,
+    }).catch((error) => {
       sendJson(res, error.status || 500, {
         message: error.status ? error.message : "Something went wrong. Nothing was saved.",
         fields: error.fields || undefined,
@@ -75,6 +95,10 @@ async function handle(req, res, ctx) {
     res.end();
     return;
   }
+  if (req.method === "GET" && url.pathname === "/poc/onboarding") {
+    serveDocsPage(req, res, ctx);
+    return;
+  }
   if (url.pathname.startsWith("/api/")) {
     await routeApi(req, res, url, ctx);
     return;
@@ -88,6 +112,8 @@ async function routeApi(req, res, url, ctx) {
     sendJson(res, 429, { message: "Too many requests. Wait a few minutes and try again." });
     return;
   }
+  ctx.isOwner = (request) => authorized(request, config);
+  if (await handleDocsRequest(req, res, url, ctx)) return;
 
   if (req.method === "GET" && url.pathname === "/api/health") {
     sendJson(res, 200, health(config, calendar, mailer));
@@ -135,6 +161,11 @@ async function routeApi(req, res, url, ctx) {
   }
   if (req.method === "POST" && url.pathname === "/api/intake") {
     const body = await readJson(req);
+    if (isQuietSpam(body, config.now().getTime())) {
+      sendJson(res, 201, quietIntake());
+      return;
+    }
+    if (!(await acceptTurnstile(res, ctx, body))) return;
     const fields = validateIntake(body);
     const followUp = new Date(config.now().getTime() + 24 * 60 * 60 * 1000).toISOString();
     const saved = await store.createCustomerLead(fields, { stage: "new_lead", followUp });
@@ -155,12 +186,14 @@ async function routeApi(req, res, url, ctx) {
         fields.code_description ? `Work described: ${fields.code_description}` : "",
       ].filter(Boolean),
     });
+    const hubspotResult = await forwardIntakeToHubSpot(ctx, fields, saved.lead, req);
     await remember(store, config, "intake");
     sendJson(res, saved.duplicate ? 200 : 201, {
       leadId: saved.lead.id,
       duplicate: saved.duplicate,
       stage: saved.lead.stage,
       email: { sent: mail.sent === true },
+      hubspot: { ok: hubspotResult.ok === true, status: Number(hubspotResult.status) || 0 },
       message: saved.duplicate
         ? receipt("We already had a record for this email, so we updated it instead of creating a second one.", mail)
         : receipt("Your intake was received. It does not hire ASBS or authorize any submission on your behalf.", mail),
@@ -169,6 +202,11 @@ async function routeApi(req, res, url, ctx) {
   }
   if (req.method === "POST" && url.pathname === "/api/vendors") {
     const body = await readJson(req);
+    if (isQuietSpam(body, config.now().getTime())) {
+      sendJson(res, 201, quietVendor());
+      return;
+    }
+    if (!(await acceptTurnstile(res, ctx, body))) return;
     const document = validateDocument(body.document);
     const fields = validateVendor(body);
     const saved = await store.createVendorLead(fields);
@@ -445,7 +483,51 @@ function health(config, calendar, mailer) {
     minimumNoticeHours: config.minNoticeHours,
     bufferMinutes: config.bufferMinutes,
     bookingHorizonDays: HORIZON_DAYS,
+    intakeRevision: "2026-11-11-autodeploy-probe",
+    turnstile: turnstilePublic(config.env),
   };
+}
+
+async function acceptTurnstile(res, ctx, body) {
+  const result = await checkTurnstile(body, ctx.config.env, ctx.turnstileFetch);
+  if (result.ok) return true;
+  sendJson(res, result.status || 400, { message: result.message || "Please confirm you are a person, then submit again." });
+  return false;
+}
+
+async function forwardIntakeToHubSpot(ctx, fields, lead, req) {
+  const failed = { ok: false, status: 0 };
+  try {
+    const result = await submitIntakeToHubSpot({
+      intake: fields,
+      leadId: lead.id,
+      submittedAt: lead.updatedAt || lead.createdAt,
+      pageUri: pageUriFromReferer(req.headers.referer || req.headers.referrer),
+      env: ctx.config.env,
+      fetchImpl: ctx.hubspot.fetchImpl,
+      timeoutMs: ctx.hubspot.timeoutMs,
+      log: ctx.hubspot.log,
+    });
+    const status = {
+      ok: result.ok === true,
+      status: Number(result.status) || 0,
+      at: new Date().toISOString(),
+    };
+    await ctx.store.setLeadHubSpotStatus(lead.id, status);
+    return status;
+  } catch {
+    console.info(JSON.stringify({
+      event: "hubspot_intake",
+      leadId: lead.id,
+      ok: false,
+      status: 0,
+      error: "unexpected",
+    }));
+    try {
+      await ctx.store.setLeadHubSpotStatus(lead.id, { ...failed, at: new Date().toISOString() });
+    } catch { /* The visitor response still succeeds. */ }
+    return failed;
+  }
 }
 
 async function slotsFor(config, store, calendar, type, range) {
@@ -987,8 +1069,30 @@ function countBy(items, fn) {
   return out;
 }
 
+function isProxyAddress(ip) {
+  const normalized = String(ip || "").replace(/^::ffff:/, "");
+  if (normalized === "127.0.0.1" || normalized === "::1") return true;
+  if (normalized.startsWith("10.") || normalized.startsWith("192.168.")) return true;
+  const bits = normalized.match(/^172\.(\d+)\./);
+  if (bits) {
+    const second = Number(bits[1]);
+    if (second >= 16 && second <= 31) return true;
+  }
+  return normalized.startsWith("fc") || normalized.startsWith("fd");
+}
+
+export function clientIp(req) {
+  const socketIp = req.socket?.remoteAddress || "unknown";
+  const forwarded = req.headers?.["x-forwarded-for"];
+  if (forwarded && isProxyAddress(socketIp)) {
+    const first = String(forwarded).split(",")[0].trim();
+    if (first && first.length <= 80 && /^[0-9a-fA-F:.]+$/.test(first)) return first;
+  }
+  return socketIp;
+}
+
 function allowRate(ctx, req, bucket) {
-  const ip = req.socket.remoteAddress || "unknown";
+  const ip = clientIp(req);
   const key = `${ip}:${bucket.startsWith("POST /api/events") ? "events" : bucket.startsWith("POST /api/auth/login") ? "login" : "write"}`;
   if (req.method === "GET") return true;
   const limit = key.endsWith("events") ? 120 : key.endsWith("login") ? 8 : 100;
@@ -1015,10 +1119,32 @@ function applyCors(req, res) {
   if (!PRODUCTION_ORIGINS.has(origin)) return null;
   res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader("Access-Control-Max-Age", "86400");
   return origin;
+}
+
+function quietIntake() {
+  return {
+    leadId: crypto.randomUUID(),
+    duplicate: false,
+    stage: "new_lead",
+    email: { sent: false },
+    hubspot: { ok: true, status: 200 },
+    message: receipt("Your intake was received. It does not hire ASBS or authorize any submission on your behalf.", { sent: false }),
+  };
+}
+
+function quietVendor() {
+  return {
+    leadId: crypto.randomUUID(),
+    duplicate: false,
+    documentId: null,
+    email: { sent: false },
+    message: receipt("Your vendor registration was saved privately. It does not guarantee teaming, subcontracting, or a contract award.", { sent: false }),
+  };
 }
 
 function setSecurityHeaders(res) {

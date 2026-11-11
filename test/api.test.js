@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { createApp, loadConfig } from "../server/app.js";
+import { clientIp, createApp, loadConfig } from "../server/app.js";
 
 const NOW = "2026-10-26T12:00:00.000Z";
 
@@ -19,13 +19,16 @@ function disconnectedCalendar() {
   };
 }
 
-async function start({ env = {}, calendar = disconnectedCalendar(), password = "test-dashboard-password", mailer } = {}) {
+async function start({ env = {}, calendar = disconnectedCalendar(), password = "test-dashboard-password", mailer, hubspotFetch, hubspotTimeoutMs, hubspotLog } = {}) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "asbs-"));
   const app = createApp({
     dataDir,
     rootDir: path.resolve("."),
     now: () => new Date(NOW),
     calendar,
+    hubspotFetch: hubspotFetch || (async () => new Response("{}", { status: 200 })),
+    ...(hubspotTimeoutMs ? { hubspotTimeoutMs } : {}),
+    ...(hubspotLog ? { hubspotLog } : {}),
     ...(mailer ? { mailer } : {}),
     env: {
       ASBS_ENV: "staging",
@@ -91,6 +94,9 @@ test("health, packages, and static protections", async () => {
     assert.equal(health.data.calendar.connected, false);
     assert.equal(health.data.payments.livePackageCheckout, false);
     assert.equal(health.data.timezone, "America/Chicago");
+    assert.equal(health.data.intakeRevision, "2026-11-11-autodeploy-probe");
+    assert.equal(health.data.turnstile.enabled, false);
+    assert.equal(health.data.turnstile.siteKey, undefined);
 
     const packages = await api(ctx.base, "GET", "/api/packages");
     assert.equal(packages.data.purchasable, false);
@@ -403,10 +409,24 @@ test("CORS allows the production website origin on API routes", async () => {
     });
     assert.equal(preflight.status, 204);
     assert.equal(preflight.headers.get("access-control-allow-origin"), origin);
+    assert.equal(preflight.headers.get("access-control-allow-credentials"), "true");
+
+    const apex = await fetch(ctx.base + "/api/events", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://americanstandardbusinesssolutions.com",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "Content-Type",
+      },
+    });
+    assert.equal(apex.status, 204);
+    assert.equal(apex.headers.get("access-control-allow-origin"), "https://americanstandardbusinesssolutions.com");
+    assert.equal(apex.headers.get("access-control-allow-credentials"), "true");
 
     const health = await api(ctx.base, "GET", "/api/health", null, { Origin: origin });
     assert.equal(health.status, 200);
     assert.equal(health.headers.get("access-control-allow-origin"), origin);
+    assert.equal(health.headers.get("access-control-allow-credentials"), "true");
 
     const blocked = await fetch(ctx.base + "/api/health", {
       method: "OPTIONS",
@@ -414,6 +434,7 @@ test("CORS allows the production website origin on API routes", async () => {
     });
     assert.equal(blocked.status, 403);
     assert.equal(blocked.headers.get("access-control-allow-origin"), null);
+    assert.equal(blocked.headers.get("access-control-allow-credentials"), null);
   } finally {
     await ctx.stop();
   }
@@ -536,6 +557,110 @@ test("step 1 alone is a valid intake and a full intake keeps the work descriptio
     assert.equal(second.intake.nigp, "123-45");
     assert.equal(second.intake.uei, "Z12345678901");
     assert.equal(dash.data.leads.some((item) => item.email === "conflict.codes@example.com"), false);
+  } finally {
+    await ctx.stop();
+  }
+});
+
+test("client IP uses the first forwarded address only from a proxy", () => {
+  assert.equal(clientIp({
+    headers: { "x-forwarded-for": "203.0.113.8, 10.0.0.4" },
+    socket: { remoteAddress: "10.20.0.8" },
+  }), "203.0.113.8");
+  assert.equal(clientIp({
+    headers: { "x-forwarded-for": "203.0.113.8" },
+    socket: { remoteAddress: "::ffff:10.0.0.4" },
+  }), "203.0.113.8");
+  assert.equal(clientIp({
+    headers: { "x-forwarded-for": "203.0.113.8" },
+    socket: { remoteAddress: "8.8.8.8" },
+  }), "8.8.8.8");
+  assert.equal(clientIp({
+    headers: {},
+    socket: { remoteAddress: "203.0.113.9" },
+  }), "203.0.113.9");
+});
+
+test("login limits follow the forwarded client IP", async () => {
+  const ctx = await start();
+  try {
+    for (let i = 0; i < 8; i += 1) {
+      const attempt = await api(ctx.base, "POST", "/api/auth/login", { password: "nope" }, { "x-forwarded-for": "203.0.113.10" });
+      assert.equal(attempt.status, 401);
+    }
+    const blocked = await api(ctx.base, "POST", "/api/auth/login", { password: "nope" }, { "x-forwarded-for": "203.0.113.10" });
+    assert.equal(blocked.status, 429);
+    const other = await api(ctx.base, "POST", "/api/auth/login", { password: "nope" }, { "x-forwarded-for": "203.0.113.11" });
+    assert.equal(other.status, 401);
+  } finally {
+    await ctx.stop();
+  }
+});
+
+test("honeypot and too-fast intake or vendor posts look successful but are not stored", async () => {
+  let hubspotCalls = 0;
+  const ctx = await start({
+    hubspotFetch: async () => {
+      hubspotCalls += 1;
+      return new Response("{}", { status: 200 });
+    },
+  });
+  const started = Date.parse(NOW);
+  try {
+    const honeypot = await api(ctx.base, "POST", "/api/intake", {
+      ...customer({ email: "bot.intake@example.com", name: "Bot Person" }),
+      based: "Testville, TX",
+      serviceInterest: "operations",
+      company_url: "https://spam.example",
+      formStartedAt: started - 20000,
+    });
+    assert.equal(honeypot.status, 201);
+    assert.match(honeypot.data.message, /intake was received/i);
+
+    const rushed = await api(ctx.base, "POST", "/api/intake", {
+      ...customer({ email: "rushed.intake@example.com" }),
+      based: "Testville, TX",
+      serviceInterest: "operations",
+      company_url: "",
+      formStartedAt: started - 500,
+    });
+    assert.equal(rushed.status, 201);
+
+    const real = await api(ctx.base, "POST", "/api/intake", {
+      ...customer({ email: "real.intake@example.com" }),
+      based: "Testville, TX",
+      serviceInterest: "operations",
+      company_url: "",
+      formStartedAt: started - 10000,
+      notes: "A real note.",
+    });
+    assert.equal(real.status, 201);
+    assert.equal(real.data.hubspot.status, 200);
+
+    const vendorBot = await api(ctx.base, "POST", "/api/vendors", {
+      legalName: "Bot Supply",
+      contactName: "Bot Vendor",
+      email: "bot.vendor@example.com",
+      phone: "(713) 555-0199",
+      services: "Supplies",
+      coverage: "Texas",
+      teamingInterest: "no",
+      consent: true,
+      company_url: "filled",
+      formStartedAt: started - 20000,
+    });
+    assert.equal(vendorBot.status, 201);
+    assert.match(vendorBot.data.message, /does not guarantee/i);
+
+    const login = await api(ctx.base, "POST", "/api/auth/login", { password: "test-dashboard-password" });
+    const cookie = login.headers.get("set-cookie").split(";")[0];
+    const dash = await api(ctx.base, "GET", "/api/dashboard", null, { cookie });
+    const emails = dash.data.leads.map((lead) => lead.email);
+    assert.equal(emails.includes("bot.intake@example.com"), false);
+    assert.equal(emails.includes("rushed.intake@example.com"), false);
+    assert.equal(emails.includes("bot.vendor@example.com"), false);
+    assert.equal(emails.includes("real.intake@example.com"), true);
+    assert.equal(hubspotCalls, 1);
   } finally {
     await ctx.stop();
   }
