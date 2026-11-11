@@ -39,17 +39,61 @@
       meta: meta || {}
     });
     try {
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(api + "/api/events", new Blob([payload], { type: "application/json" }));
-        return;
-      }
+      fetch(api + "/api/events", {
+        method: "POST",
+        keepalive: true,
+        credentials: "omit",
+        headers: { "Content-Type": "application/json" },
+        body: payload
+      }).catch(function () {});
     } catch (error) { /* The page still works if analytics cannot be sent. */ }
-    fetch(api + "/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: payload,
-      keepalive: true
-    }).catch(function () {});
+  }
+
+  function submitForm(path, body, onSlow) {
+    var deadline = Date.now() + 75000;
+    var slowTimer = window.setTimeout(function () {
+      if (typeof onSlow === "function") onSlow();
+    }, 4000);
+    var attempt = 0;
+    function run() {
+      attempt += 1;
+      var remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        var late = new Error("The request timed out.");
+        late.status = 0;
+        return Promise.reject(late);
+      }
+      var controller = new AbortController();
+      var timer = window.setTimeout(function () { controller.abort(); }, remaining);
+      return fetch(api + path, {
+        method: "POST",
+        credentials: "omit",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      }).then(function (response) {
+        window.clearTimeout(timer);
+        var retryable = response.status === 502 || response.status === 503 || response.status === 504;
+        if (retryable && attempt === 1 && Date.now() < deadline) return run();
+        return response.text().then(function (text) {
+          var data = {};
+          if (text) {
+            try { data = JSON.parse(text); } catch (parseError) { data = { message: text.slice(0, 180) }; }
+          }
+          if (!response.ok) {
+            var failure = new Error(data.message || "The request did not succeed.");
+            failure.status = response.status;
+            throw failure;
+          }
+          return data;
+        });
+      }, function (error) {
+        window.clearTimeout(timer);
+        if (!error.status && attempt === 1 && Date.now() < deadline) return run();
+        throw error;
+      });
+    }
+    return run().finally(function () { window.clearTimeout(slowTimer); });
   }
 
   function showMessage(node, message, kind) {
@@ -132,7 +176,7 @@
     });
   }
 
-  window.ASBS = { apiFetch: apiFetch, track: track, showMessage: showMessage, formData: formData, cfg: cfg };
+  window.ASBS = { apiFetch: apiFetch, submitForm: submitForm, track: track, showMessage: showMessage, formData: formData, cfg: cfg };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();

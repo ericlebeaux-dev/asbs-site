@@ -5,6 +5,7 @@
     var DRAFT_KEY = "asbs.intake.draft";
     var SUGGEST_WAIT = 250;
     var step = 1;
+    var formStartedAt = Date.now();
     var suggestTimer = 0;
     var suggestItems = [];
     var suggestIndex = -1;
@@ -381,12 +382,16 @@
       setAlert("");
       var body = splitBased(window.ASBS.formData(form));
       body.consent = body.consent === true;
+      body.formStartedAt = formStartedAt;
       var button = document.getElementById("submitIntake");
       var skipButton = document.getElementById("skipStep");
       if (button) button.disabled = true;
       if (skipButton) skipButton.disabled = true;
       try {
-        var result = await window.ASBS.apiFetch("/api/intake", { method: "POST", body: body });
+        var result = await window.ASBS.submitForm("/api/intake", body, function () {
+          setAlert("Connecting securely, this can take up to a minute…", "pending");
+        });
+        setAlert("");
         localStorage.removeItem(DRAFT_KEY);
         if (banner) banner.hidden = true;
         form.hidden = true;
@@ -396,7 +401,7 @@
         document.getElementById("confirmText").textContent = result.message;
         confirm.focus();
       } catch (error) {
-        setAlert(error.message || "The intake was not saved.", "error");
+        setAlert((error.message || "The intake was not saved.") + " The form is still here. Call (281) 954-5167 or email info@americanstandardbusinesssolutions.com.", "error");
         if (button) button.disabled = false;
         if (skipButton) skipButton.disabled = false;
       }
@@ -411,6 +416,7 @@
   function watchVendor() {
     var form = document.getElementById("vendorForm");
     if (!form) return;
+    var formStartedAt = Date.now();
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
       if (!form.reportValidity()) return;
@@ -431,14 +437,21 @@
         body.document = await readFile(file);
       }
       delete body.documentFile;
+      body.formStartedAt = formStartedAt;
       var button = form.querySelector("[type=submit]");
       button.disabled = true;
       try {
-        var result = await window.ASBS.apiFetch("/api/vendors", { method: "POST", body: body });
+        var result = await window.ASBS.submitForm("/api/vendors", body, function () {
+          if (!alert) return;
+          alert.hidden = false;
+          alert.textContent = "Connecting securely, this can take up to a minute…";
+          alert.className = "form-alert is-pending";
+          alert.setAttribute("aria-live", "polite");
+        });
         form.reset();
         window.ASBS.showMessage(alert, result.message, "ok");
       } catch (error) {
-        window.ASBS.showMessage(alert, error.message || "The registration was not saved.", "error");
+        window.ASBS.showMessage(alert, (error.message || "The registration was not saved.") + " The form is still here. Call (281) 954-5167 or email info@americanstandardbusinesssolutions.com.", "error");
       } finally {
         button.disabled = false;
       }

@@ -265,6 +265,12 @@ test("public titles and descriptions are unique and within search limits", () =>
   assert.match(read("consult.html"), /<h1>Call or email ASBS<\/h1>/);
   assert.match(read("intake.html"), /<h1[^>]*>Request a free consultation<\/h1>/);
   assert.match(read("index.html"), /href="intake\.html"[^>]*>Request a free consultation/);
+  assert.equal(read("assets/js/asbs.js").includes("sendBeacon"), false);
+  assert.match(read("assets/js/asbs.js"), /credentials:\s*"omit"/);
+  assert.match(read("assets/js/forms.js"), /formStartedAt/);
+  assert.match(read("assets/js/forms.js"), /Connecting securely, this can take up to a minute/);
+  assert.match(read("intake.html"), /name="company_url"[^>]*tabindex="-1"/);
+  assert.match(read("vendors.html"), /name="company_url"[^>]*tabindex="-1"/);
   assert.match(read("robots.txt"), /Sitemap: https:\/\/www\.americanstandardbusinesssolutions\.com\/sitemap\.xml/);
   const sitemap = read("sitemap.xml");
   assert.equal((sitemap.match(/<lastmod>2026-11-11<\/lastmod>/g) || []).length, 11);
