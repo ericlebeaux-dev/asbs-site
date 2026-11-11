@@ -11,6 +11,7 @@ import { createStore } from "./store.js";
 import { TIME_ZONE, addDaysYmd, formatZoned, zonedParts, zonedTimeToUtc, zonedToday } from "./time.js";
 import { codeSummary } from "./codes.js";
 import { pageUriFromReferer, submitIntakeToHubSpot } from "./hubspot.js";
+import { checkTurnstile, turnstilePublic } from "./turnstile.js";
 import {
   httpError,
   validateBooking,
@@ -61,9 +62,10 @@ export function createApp(options = {}) {
     timeoutMs: options.hubspotTimeoutMs,
     log: options.hubspotLog,
   };
+  const turnstileFetch = options.turnstileFetch || globalThis.fetch;
   const limits = new Map();
   const server = http.createServer((req, res) => {
-    handle(req, res, { config, store, calendar, mailer, limits, hubspot }).catch((error) => {
+    handle(req, res, { config, store, calendar, mailer, limits, hubspot, turnstileFetch }).catch((error) => {
       sendJson(res, error.status || 500, {
         message: error.status ? error.message : "Something went wrong. Nothing was saved.",
         fields: error.fields || undefined,
@@ -146,6 +148,7 @@ async function routeApi(req, res, url, ctx) {
       sendJson(res, 201, quietIntake());
       return;
     }
+    if (!(await acceptTurnstile(res, ctx, body))) return;
     const fields = validateIntake(body);
     const followUp = new Date(config.now().getTime() + 24 * 60 * 60 * 1000).toISOString();
     const saved = await store.createCustomerLead(fields, { stage: "new_lead", followUp });
@@ -186,6 +189,7 @@ async function routeApi(req, res, url, ctx) {
       sendJson(res, 201, quietVendor());
       return;
     }
+    if (!(await acceptTurnstile(res, ctx, body))) return;
     const document = validateDocument(body.document);
     const fields = validateVendor(body);
     const saved = await store.createVendorLead(fields);
@@ -462,8 +466,16 @@ function health(config, calendar, mailer) {
     minimumNoticeHours: config.minNoticeHours,
     bufferMinutes: config.bufferMinutes,
     bookingHorizonDays: HORIZON_DAYS,
-    intakeRevision: "2026-11-11-readiness",
+    intakeRevision: "2026-11-11-turnstile",
+    turnstile: turnstilePublic(config.env),
   };
+}
+
+async function acceptTurnstile(res, ctx, body) {
+  const result = await checkTurnstile(body, ctx.config.env, ctx.turnstileFetch);
+  if (result.ok) return true;
+  sendJson(res, result.status || 400, { message: result.message || "Please confirm you are a person, then submit again." });
+  return false;
 }
 
 async function forwardIntakeToHubSpot(ctx, fields, lead, req) {
