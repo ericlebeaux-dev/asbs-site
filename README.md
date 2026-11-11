@@ -27,3 +27,29 @@ Confirmation email is sent only when `GOOGLE_GMAIL_REFRESH_TOKEN` is set on the 
 - Writing to Google Calendar, until the owner sets the OAuth variables in `.env.example` on the server.
 
 See `docs/STAGING.md`, `docs/GOOGLE_CALENDAR_SETUP.md`, `docs/DEPLOYMENT.md`, and `docs/OWNER_APPROVAL_CHECKLIST.md`.
+
+## Staging document proof of concept
+
+`GET /poc/onboarding` on the staging API is off unless `DOCS_ENABLED=1` and the Backblaze B2 settings below are all set. It is not part of the GitHub Pages site. The page says not to upload real tax documents. The authorization form text is a sample created in Documenso, not in this repository.
+
+The browser posts each file to the staging API as `multipart/form-data`. The API checks the type, the 10 MB cap, and the file's first bytes, then writes the object with SSE-B2 (`ServerSideEncryption: AES256`). It does not use a presigned PUT, and it does not accept the file as base64 JSON. The staging bucket is `asbs-intake-docs-staging` in `us-west-004` (`https://s3.us-west-004.backblazeb2.com`). The application key cannot change bucket settings, and custom CORS rules cannot be set from the B2 web UI, so the bucket stays at the default of no origins. Uploads do not need a CORS origin. An owner download is a 60-second presigned GET opened as a normal browser navigation, which also does not need CORS. The upload ticket lasts about 15 minutes and allows 5 files. Leave `DOCS_ENABLED` unset until the page should be turned on. While it is unset, `/poc/onboarding` and `/api/poc/` respond 404 and the rest of the API is unchanged.
+
+Turnstile on this page fails closed, including when siteverify cannot be reached, and the hostname must match the request host. The normal intake form still treats a Turnstile outage as allow-through. Leave `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` unset to keep the honeypot-only behavior.
+
+Documenso uses API v2 at `DOCUMENSO_BASE_URL` (default `https://app.documenso.com/api/v2`). `DOCUMENSO_API_TOKEN` is sent as the Authorization header. `DOCUMENSO_TEMPLATE_ID` is the template envelope id. The free plan has no webhooks, so an owner status check polls, then stores the signed PDF and audit snapshot in the bucket. Completed envelopes often cannot be deleted; set `DOCUMENSO_DELETE_COMPLETED=1` only if deletion should be attempted.
+
+No TIN or file bytes are written to HubSpot, logs, or analytics. A short status line may be sent to the existing HubSpot form: `documents received: W9, COI; authorization: pending`.
+
+| Variable | Purpose |
+| --- | --- |
+| DOCS_ENABLED | `1` turns the proof of concept on |
+| DOCS_S3_ENDPOINT | B2 S3 endpoint |
+| DOCS_S3_REGION | B2 region, such as `us-west-004` |
+| DOCS_S3_BUCKET | Private bucket name |
+| DOCS_S3_KEY_ID | B2 application key id |
+| DOCS_S3_SECRET | B2 application key |
+| DOCS_MAX_BYTES | Optional cap, never above 10 MB |
+| DOCUMENSO_API_TOKEN | Documenso API token |
+| DOCUMENSO_TEMPLATE_ID | Sample template id |
+| DOCUMENSO_BASE_URL | Optional API base |
+| DOCUMENSO_DELETE_COMPLETED | `1` attempts to delete the envelope after download |

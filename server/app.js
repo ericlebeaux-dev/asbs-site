@@ -12,6 +12,7 @@ import { TIME_ZONE, addDaysYmd, formatZoned, zonedParts, zonedTimeToUtc, zonedTo
 import { codeSummary } from "./codes.js";
 import { pageUriFromReferer, submitIntakeToHubSpot } from "./hubspot.js";
 import { checkTurnstile, turnstilePublic } from "./turnstile.js";
+import { handleDocsRequest, serveDocsPage } from "./docs/http.js";
 import {
   httpError,
   validateBooking,
@@ -65,7 +66,17 @@ export function createApp(options = {}) {
   const turnstileFetch = options.turnstileFetch || globalThis.fetch;
   const limits = new Map();
   const server = http.createServer((req, res) => {
-    handle(req, res, { config, store, calendar, mailer, limits, hubspot, turnstileFetch }).catch((error) => {
+    handle(req, res, {
+      config,
+      store,
+      calendar,
+      mailer,
+      limits,
+      hubspot,
+      turnstileFetch,
+      docsStore: options.docsStore,
+      documensoFetch: options.documensoFetch,
+    }).catch((error) => {
       sendJson(res, error.status || 500, {
         message: error.status ? error.message : "Something went wrong. Nothing was saved.",
         fields: error.fields || undefined,
@@ -84,6 +95,10 @@ async function handle(req, res, ctx) {
     res.end();
     return;
   }
+  if (req.method === "GET" && url.pathname === "/poc/onboarding") {
+    serveDocsPage(req, res, ctx);
+    return;
+  }
   if (url.pathname.startsWith("/api/")) {
     await routeApi(req, res, url, ctx);
     return;
@@ -97,6 +112,8 @@ async function routeApi(req, res, url, ctx) {
     sendJson(res, 429, { message: "Too many requests. Wait a few minutes and try again." });
     return;
   }
+  ctx.isOwner = (request) => authorized(request, config);
+  if (await handleDocsRequest(req, res, url, ctx)) return;
 
   if (req.method === "GET" && url.pathname === "/api/health") {
     sendJson(res, 200, health(config, calendar, mailer));
