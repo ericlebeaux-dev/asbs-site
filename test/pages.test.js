@@ -21,12 +21,13 @@ test("internal links and anchors resolve", () => {
       if (/^(https?:|mailto:|tel:)/.test(href)) continue;
       const [beforeHash, hash] = href.split("#");
       const target = beforeHash.split("?")[0];
-      if (target) {
+      const home = target === "/" || target === "/index.html";
+      if (target && !home) {
         const local = path.normalize(path.join(root, target));
         if (!local.startsWith(root) || !fs.existsSync(local)) missing.push(`${file} -> ${href}`);
       }
       if (hash) {
-        const host = target ? read(path.basename(target)) : html;
+        const host = home ? read("index.html") : (target ? read(path.basename(target)) : html);
         if (!host.includes(`id="${hash}"`) && !host.includes(`id='${hash}'`)) missing.push(`${file} -> #${hash}`);
       }
     }
@@ -233,5 +234,41 @@ test("November 10 quick fixes stay within the approved scope", () => {
     assert.match(html, /property="og:type"/, file);
     assert.match(html, /name="twitter:card"/, file);
     assert.equal(/katy/i.test(html), false, file);
+  }
+});
+
+test("public titles and descriptions are unique and within search limits", () => {
+  const titles = new Map();
+  const descriptions = new Map();
+  const marketing = htmlFiles.filter((file) => file !== "command.html" && file !== "dashboard.html");
+  for (const file of marketing) {
+    const html = read(file);
+    const title = html.match(/<title>([^<]*)<\/title>/)[1];
+    const description = html.match(/<meta name="description" content="([^"]*)"/)[1];
+    assert.equal(title.length <= 60, true, `${file} title ${title.length}: ${title}`);
+    assert.equal(description.length <= 160, true, `${file} description ${description.length}`);
+    assert.equal(titles.has(title), false, `duplicate title ${title}`);
+    assert.equal(descriptions.has(description), false, `duplicate description on ${file}`);
+    titles.set(title, file);
+    descriptions.set(description, file);
+    assert.match(html, /<a class="brand" href="\/">/);
+    for (const image of html.match(/<img\b[^>]*>/g) || []) {
+      const alt = image.match(/\balt="([^"]*)"/);
+      assert.equal(Boolean(alt && alt[1].trim()), true, `${file} ${image}`);
+    }
+    const canonical = html.match(/<link rel="canonical" href="([^"]*)"/);
+    if (canonical) {
+      assert.equal(canonical[1].startsWith("https://www.americanstandardbusinesssolutions.com/"), true, file);
+      assert.equal(canonical[1].includes("index.html"), false, file);
+    }
+  }
+  assert.match(read("consult.html"), /<h1>Call or email ASBS<\/h1>/);
+  assert.match(read("intake.html"), /<h1[^>]*>Request a free consultation<\/h1>/);
+  assert.match(read("index.html"), /href="intake\.html"[^>]*>Request a free consultation/);
+  assert.match(read("robots.txt"), /Sitemap: https:\/\/www\.americanstandardbusinesssolutions\.com\/sitemap\.xml/);
+  const sitemap = read("sitemap.xml");
+  assert.equal((sitemap.match(/<lastmod>2026-11-11<\/lastmod>/g) || []).length, 11);
+  for (const blocked of ["packages.html", "thanks.html", "command.html", "dashboard.html", "index.html"]) {
+    assert.equal(sitemap.includes(blocked), false, blocked);
   }
 });
