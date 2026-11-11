@@ -94,7 +94,7 @@ test("health, packages, and static protections", async () => {
     assert.equal(health.data.calendar.connected, false);
     assert.equal(health.data.payments.livePackageCheckout, false);
     assert.equal(health.data.timezone, "America/Chicago");
-    assert.equal(health.data.intakeRevision, "2026-11-11-turnstile");
+    assert.equal(health.data.intakeRevision, "2026-11-11-autodeploy-probe");
     assert.equal(health.data.turnstile.enabled, false);
     assert.equal(health.data.turnstile.siteKey, undefined);
 
