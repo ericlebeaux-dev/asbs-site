@@ -25,6 +25,38 @@ function timeoutSignal(timeoutMs) {
   };
 }
 
+export async function checkTurnstileClosed(body, env = {}, fetchImpl = globalThis.fetch, expectedHost = "", timeoutMs = 8000) {
+  const config = turnstileConfig(env);
+  if (!config.enabled) return { ok: false, status: 503, message: "The person check is not configured." };
+  const token = typeof body?.turnstileToken === "string" ? body.turnstileToken.trim() : "";
+  if (!token || token.length > 2048) {
+    return { ok: false, status: 400, message: "Please confirm you are a person, then submit again." };
+  }
+  const timeout = timeoutSignal(timeoutMs);
+  try {
+    const response = await fetchImpl(SITEVERIFY, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+      body: new URLSearchParams({ secret: config.secret, response: token }),
+      signal: timeout.signal,
+    });
+    if (!response.ok) return { ok: false, status: 503, message: "The person check could not be completed." };
+    const data = await response.json();
+    if (!data || data.success !== true) {
+      return { ok: false, status: 400, message: "Please confirm you are a person, then submit again." };
+    }
+    const hostname = String(data.hostname || "").toLowerCase();
+    if (!expectedHost || hostname !== expectedHost) {
+      return { ok: false, status: 400, message: "The person check did not match this site." };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, status: 503, message: "The person check could not be completed." };
+  } finally {
+    timeout.cancel();
+  }
+}
+
 export async function checkTurnstile(body, env = {}, fetchImpl = globalThis.fetch, timeoutMs = 8000) {
   const config = turnstileConfig(env);
   if (!config.enabled) return { ok: true, skipped: true };

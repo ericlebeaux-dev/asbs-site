@@ -153,6 +153,41 @@ function postOnce(fetchImpl, url, body, timeoutMs) {
   });
 }
 
+export function documentReceiptMessage({ received = [], authorization = "pending" } = {}) {
+  const labels = [];
+  if (received.includes("W9")) labels.push("W9");
+  if (received.includes("COI")) labels.push("COI");
+  const auth = authorization === "signed" ? "signed" : "pending";
+  return `documents received: ${labels.join(", ") || "none"}; authorization: ${auth}`;
+}
+
+export async function submitDocumentReceipt({
+  email,
+  message,
+  leadId,
+  env,
+  fetchImpl = globalThis.fetch,
+  log,
+  timeoutMs = HUBSPOT_TIMEOUT_MS,
+} = {}) {
+  const { url } = hubspotConfigFromEnv(env);
+  const payload = {
+    fields: [
+      { objectTypeId: "0-1", name: "email", value: String(email || "") },
+      { objectTypeId: "0-1", name: "message", value: String(message || "") },
+    ],
+    context: { pageUri: INTAKE_PAGE_URI, pageName: INTAKE_PAGE_NAME },
+  };
+  try {
+    const response = await postOnce(fetchImpl, url, JSON.stringify(payload), timeoutMs);
+    logResult(log, leadId, { ok: response.status >= 200 && response.status < 300, status: response.status });
+    return { ok: response.ok, status: response.status };
+  } catch {
+    logResult(log, leadId, { ok: false, status: 0, error: "network" });
+    return { ok: false, status: 0 };
+  }
+}
+
 export async function submitIntakeToHubSpot({
   intake,
   leadId,
