@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { createApp } from "../server/app.js";
+import { createDocumensoClient } from "../server/docs/documenso.js";
 import { createMemoryDocStore } from "../server/docs/memory-store.js";
 import { encryptedPutInput } from "../server/docs/s3-store.js";
 import { documentReceiptMessage } from "../server/hubspot.js";
@@ -234,9 +235,11 @@ test("Turnstile must succeed for the document flow and viewing requires the dash
 test("signature status is polled from a mocked Documenso client", async () => {
   const calls = [];
   const documensoFetch = async (url, init = {}) => {
-    calls.push({ url, method: init.method || "GET" });
+    const entry = { url, method: init.method || "GET", authorization: init.headers?.Authorization || "" };
+    if (url.endsWith("/envelope/use")) entry.payload = JSON.parse(String(init.body.get("payload")));
+    calls.push(entry);
     if (url.endsWith("/envelope/envelope_template")) {
-      return new Response(JSON.stringify({ id: "envelope_template", recipients: [{ id: 7, role: "SIGNER", email: "template@example.com" }] }), { status: 200 });
+      return new Response(JSON.stringify({ id: "envelope_template", type: "TEMPLATE", recipients: [{ id: 7, role: "SIGNER", email: "" }] }), { status: 200 });
     }
     if (url.endsWith("/envelope/use")) {
       return new Response(JSON.stringify({
@@ -257,10 +260,10 @@ test("signature status is polled from a mocked Documenso client", async () => {
     if (url.includes("/download?version=signed")) {
       return new Response(PDF, { status: 200, headers: { "Content-Type": "application/pdf" } });
     }
-    if (url.includes("/download?version=certificate")) {
-      return new Response("no", { status: 404 });
+    if (url.endsWith("/envelope/envelope_created/certificate/download")) {
+      return new Response(PDF, { status: 200, headers: { "Content-Type": "application/pdf" } });
     }
-    return new Response(JSON.stringify({ message: "no" }), { status: 400 });
+    return new Response(JSON.stringify({ message: "no", code: "not_found" }), { status: 400 });
   };
   const ctx = await boot({ documensoFetch });
   try {
@@ -269,6 +272,12 @@ test("signature status is polled from a mocked Documenso client", async () => {
     const requested = await json(ctx.base, "POST", "/api/poc/authorization", {}, auth);
     assert.equal(requested.status, 201);
     assert.equal(requested.data.signingUrl, "https://app.documenso.com/sign/sample");
+    const used = calls.find((item) => item.url.endsWith("/envelope/use"));
+    assert.equal(used.authorization, "api_test");
+    assert.equal(used.payload.envelopeId, "envelope_template");
+    assert.equal(used.payload.distributeDocument, true);
+    assert.equal(used.payload.recipients[0].id, 7);
+    assert.equal(calls.some((item) => item.url.endsWith("/envelope/distribute")), false);
     const login = await json(ctx.base, "POST", "/api/auth/login", { password: "test-dashboard-password" });
     const cookie = login.headers.get("set-cookie").split(";")[0];
     const denied = await json(ctx.base, "POST", "/api/poc/authorization/status", { leadId: session.data.leadId });
@@ -280,12 +289,59 @@ test("signature status is polled from a mocked Documenso client", async () => {
     assert.equal(manifest.authorization.status, "signed");
     assert.equal(JSON.stringify(manifest).includes("secret-token"), false);
     assert.equal(manifest.documents.some((item) => item.role === "signed-auth" && item.sha256.length === 64), true);
+    assert.equal(manifest.documents.some((item) => item.role === "certificate"), true);
+    assert.equal(calls.some((item) => item.url.endsWith("/certificate/download")), true);
+    assert.equal(calls.some((item) => item.url.includes("version=certificate")), false);
     const signed = manifest.documents.find((item) => item.role === "signed-auth");
     const bytes = await ctx.store.getBytes(signed.key);
     assert.equal(crypto.createHash("sha256").update(bytes).digest("hex"), signed.sha256);
   } finally {
     await ctx.stop();
   }
+});
+
+test("Documenso accepts an envelope id or a numeric template id and logs without the token", async () => {
+  const lines = [];
+  const calls = [];
+  const fetchImpl = async (url, init = {}) => {
+      calls.push({
+        url,
+        method: init.method || "GET",
+        authorization: init.headers?.Authorization || "",
+        body: typeof init.body === "string" ? JSON.parse(init.body) : null,
+      });
+      if (url.endsWith("/template/25481")) {
+        return new Response(JSON.stringify({ id: 25481, envelopeId: "envelope_from_template", recipients: [{ id: 9, role: "SIGNER", email: "" }] }), { status: 200 });
+      }
+      if (url.endsWith("/template/use")) {
+        return new Response(JSON.stringify({ id: 789, envelopeId: "envelope_from_template", status: "DRAFT", recipients: [{ id: 9, email: "signer@example.com" }] }), { status: 200 });
+      }
+      if (url.endsWith("/envelope/distribute")) {
+        return new Response(JSON.stringify({ success: true, id: "envelope_from_template", recipients: [{ signingUrl: "https://app.documenso.com/sign/draft" }] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ message: "missing", code: "missing" }), { status: 404 });
+    };
+    const client = createDocumensoClient({
+      baseUrl: "https://app.documenso.com/api/v2",
+      token: "Bearer api_secret_token",
+      templateId: "25481",
+      fetchImpl,
+      log: (line) => lines.push(line),
+    });
+    const created = await client.createForSigner({ name: "Signer", email: "signer@example.com", externalId: "lead-1" });
+    assert.equal(created.envelopeId, "envelope_from_template");
+    assert.equal(created.signingUrl, "https://app.documenso.com/sign/draft");
+    assert.equal(calls[0].authorization, "api_secret_token");
+    assert.equal(calls[1].body.templateId, 25481);
+    assert.equal(calls[1].body.recipients[0].id, 9);
+    assert.equal(calls[1].body.distributeDocument, true);
+    assert.equal(calls[2].url.endsWith("/envelope/distribute"), true);
+    assert.equal(calls[2].body.envelopeId, "envelope_from_template");
+    assert.equal(calls[2].body.meta.distributionMethod, "EMAIL");
+    const logged = lines.map((line) => JSON.parse(line));
+    assert.equal(logged.some((item) => item.step === "template.get" && item.status === 200), true);
+    assert.equal(logged.some((item) => item.step === "envelope.distribute" && item.status === 200), true);
+    assert.equal(lines.join("\n").includes("api_secret_token"), false);
 });
 
 test("the HubSpot document note cannot carry a file or a TIN", () => {

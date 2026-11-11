@@ -156,6 +156,13 @@ export async function handleDocsRequest(req, res, url, ctx) {
     send(res, 404, { message: "That address was not found." });
     return true;
   } catch (error) {
+    if (!error.status) {
+      console.log(JSON.stringify({
+        event: "docs",
+        status: 0,
+        message: String(error?.message || "error").replace(/api_[A-Za-z0-9_-]+/g, "[redacted]").slice(0, 300),
+      }));
+    }
     send(res, error.status || 500, { message: error.status ? error.message : "The document request could not be completed." });
     return true;
   }

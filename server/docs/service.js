@@ -195,6 +195,7 @@ export function createDocsService({ store, settings, documensoFetch, now = () =>
       if (!documenso) fail(503, "Signature is not configured.");
       const ticket = await requireTicket(store, req, now());
       const manifest = await store.getJson(manifestKey(ticket.leadId));
+      if (!manifest?.contact) fail(404, "That record was not found.");
       const created = await documenso.createForSigner({
         name: manifest.contact.name,
         email: manifest.contact.email,
@@ -238,7 +239,7 @@ export function createDocsService({ store, settings, documensoFetch, now = () =>
       const signedKey = `leads/${leadId}/auth/${crypto.randomUUID()}.pdf`;
       const signedHash = crypto.createHash("sha256").update(signed.bytes).digest("hex");
       await store.putBytes(signedKey, signed.bytes, "application/pdf");
-      const certificate = await documenso.downloadItem(item.id, "certificate");
+      const certificate = await documenso.downloadCertificate(manifest.authorization.envelopeId);
       let certificateKey = "";
       let certificateHash = "";
       if (certificate?.bytes?.length && String(certificate.contentType).includes("pdf")) {
