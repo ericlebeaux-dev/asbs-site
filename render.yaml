@@ -1,6 +1,5 @@
-# Staging only. This file does not change GitHub Pages or the production domain.
-# Apply it from the Render dashboard on branch cursor/asbs-website-completion-0d43.
-# Do not point this service at main, and do not add www.americanstandardbusinesssolutions.com.
+# Free Render API used by the live site. GitHub Pages publishes the static site from main on its own.
+# autoDeployTrigger stays off. Deploy this service manually. Do not raise the plan.
 
 services:
   - type: web
@@ -8,8 +7,8 @@ services:
     runtime: node
     plan: free
     region: oregon
-    branch: cursor/asbs-website-completion-0d43
-    autoDeployTrigger: commit
+    branch: main
+    autoDeployTrigger: off
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
@@ -29,6 +28,29 @@ services:
         generateValue: true
       # The owner types this in the Render form. Do not commit it.
       - key: ASBS_DASHBOARD_PASSWORD
+        sync: false
+      # Document storage and Documenso. Set these in Render. Do not commit values.
+      - key: DOCS_ENABLED
+        sync: false
+      - key: DOCS_S3_ENDPOINT
+        sync: false
+      - key: DOCS_S3_REGION
+        sync: false
+      - key: DOCS_S3_BUCKET
+        sync: false
+      - key: DOCS_S3_KEY_ID
+        sync: false
+      - key: DOCS_S3_SECRET
+        sync: false
+      - key: DOCS_MAX_BYTES
+        sync: false
+      - key: DOCUMENSO_API_TOKEN
+        sync: false
+      - key: DOCUMENSO_TEMPLATE_ID
+        sync: false
+      - key: DOCUMENSO_BASE_URL
+        sync: false
+      - key: DOCUMENSO_DELETE_COMPLETED
         sync: false
       # Add these later in the Render Environment tab. Leave them out of git.
       # GOOGLE_CLIENT_ID

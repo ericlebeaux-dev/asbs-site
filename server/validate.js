@@ -102,10 +102,32 @@ export function cleanList(value, allowed, label, max = 8) {
   return items.map((item) => cleanChoice(item, allowed, label, { required: true }));
 }
 
+export const MIN_FILL_MS = 3000;
+
 export function rejectHoneypot(body) {
   if (body && typeof body.company_url === "string" && body.company_url.trim()) {
     throw httpError(400, "The form could not be submitted.");
   }
+}
+
+function startedAtMs(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) return parsed;
+    const asNumber = Number(value);
+    if (Number.isFinite(asNumber)) return asNumber;
+  }
+  return null;
+}
+
+export function isQuietSpam(body, now = Date.now()) {
+  if (!body || typeof body !== "object") return false;
+  if (typeof body.company_url === "string" && body.company_url.trim()) return true;
+  const started = startedAtMs(body.formStartedAt);
+  if (started == null) return false;
+  const elapsed = now - started;
+  return elapsed >= 0 && elapsed < MIN_FILL_MS;
 }
 
 export function requireConsent(body) {
