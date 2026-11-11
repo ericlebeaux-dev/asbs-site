@@ -271,6 +271,8 @@ test("public titles and descriptions are unique and within search limits", () =>
   assert.match(read("assets/js/forms.js"), /Connecting securely, this can take up to a minute/);
   assert.match(read("intake.html"), /name="company_url"[^>]*tabindex="-1"/);
   assert.match(read("vendors.html"), /name="company_url"[^>]*tabindex="-1"/);
+  assert.match(read("intake.html"), /id="turnstileSlot"/);
+  assert.match(read("assets/js/forms.js"), /turnstileToken/);
   assert.match(read("robots.txt"), /Sitemap: https:\/\/www\.americanstandardbusinesssolutions\.com\/sitemap\.xml/);
   const sitemap = read("sitemap.xml");
   assert.equal((sitemap.match(/<lastmod>2026-11-11<\/lastmod>/g) || []).length, 11);

@@ -170,6 +170,7 @@
         banner.classList.remove("hidden");
         banner.textContent = "Staging preview. This is not the live ASBS website. Consulting packages cannot be purchased here.";
       }
+      window.ASBS.turnstileSiteKey = health.turnstile && health.turnstile.enabled ? health.turnstile.siteKey : "";
       document.dispatchEvent(new CustomEvent("asbs:health", { detail: health }));
     }).catch(function () {
       document.dispatchEvent(new CustomEvent("asbs:offline"));

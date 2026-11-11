@@ -6,6 +6,9 @@
     var SUGGEST_WAIT = 250;
     var step = 1;
     var formStartedAt = Date.now();
+    var turnstileToken = "";
+    var turnstileRequired = false;
+    mountTurnstile(document.getElementById("turnstileSlot"), function (token) { turnstileToken = token; }, function (required) { turnstileRequired = required; });
     var suggestTimer = 0;
     var suggestItems = [];
     var suggestIndex = -1;
@@ -383,6 +386,11 @@
       var body = splitBased(window.ASBS.formData(form));
       body.consent = body.consent === true;
       body.formStartedAt = formStartedAt;
+      if (turnstileRequired && !turnstileToken) {
+        setAlert("Please confirm you are a person, then submit again.", "error");
+        return;
+      }
+      if (turnstileToken) body.turnstileToken = turnstileToken;
       var button = document.getElementById("submitIntake");
       var skipButton = document.getElementById("skipStep");
       if (button) button.disabled = true;
@@ -417,6 +425,9 @@
     var form = document.getElementById("vendorForm");
     if (!form) return;
     var formStartedAt = Date.now();
+    var turnstileToken = "";
+    var turnstileRequired = false;
+    mountTurnstile(document.getElementById("turnstileSlot"), function (token) { turnstileToken = token; }, function (required) { turnstileRequired = required; });
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
       if (!form.reportValidity()) return;
@@ -438,6 +449,15 @@
       }
       delete body.documentFile;
       body.formStartedAt = formStartedAt;
+      if (turnstileRequired && !turnstileToken) {
+        if (alert) {
+          alert.hidden = false;
+          alert.textContent = "Please confirm you are a person, then submit again.";
+          alert.className = "form-alert is-error";
+        }
+        return;
+      }
+      if (turnstileToken) body.turnstileToken = turnstileToken;
       var button = form.querySelector("[type=submit]");
       button.disabled = true;
       try {
@@ -521,6 +541,46 @@
         button.disabled = false;
       }
     });
+  }
+
+  function mountTurnstile(slot, setToken, setRequired) {
+    if (!slot) return;
+    function render(key) {
+      if (!key || !window.turnstile || slot.dataset.ready === "yes") return;
+      slot.hidden = false;
+      slot.dataset.ready = "yes";
+      setRequired(true);
+      window.turnstile.render(slot, {
+        sitekey: key,
+        callback: function (token) { setToken(token || ""); },
+        "expired-callback": function () { setToken(""); },
+        "error-callback": function () { setToken(""); }
+      });
+    }
+    function useKey(key) {
+      if (!key) return;
+      if (window.turnstile) {
+        render(key);
+        return;
+      }
+      var existing = document.querySelector("script[data-turnstile]");
+      if (!existing) {
+        var script = document.createElement("script");
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        script.async = true;
+        script.defer = true;
+        script.setAttribute("data-turnstile", "true");
+        script.onload = function () { render(key); };
+        document.head.appendChild(script);
+      } else {
+        existing.addEventListener("load", function () { render(key); });
+      }
+    }
+    document.addEventListener("asbs:health", function (event) {
+      var turnstile = event.detail && event.detail.turnstile;
+      if (turnstile && turnstile.enabled && turnstile.siteKey) useKey(turnstile.siteKey);
+    });
+    if (window.ASBS && window.ASBS.turnstileSiteKey) useKey(window.ASBS.turnstileSiteKey);
   }
 
   document.addEventListener("DOMContentLoaded", function () {
