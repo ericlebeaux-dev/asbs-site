@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { createApp } from "../server/app.js";
-import { createDocumensoClient } from "../server/docs/documenso.js";
+import { createDocumensoClient, documensoConfigShape } from "../server/docs/documenso.js";
 import { createMemoryDocStore } from "../server/docs/memory-store.js";
 import { encryptedPutInput } from "../server/docs/s3-store.js";
 import { documentReceiptMessage } from "../server/hubspot.js";
@@ -322,9 +322,9 @@ test("Documenso accepts an envelope id or a numeric template id and logs without
       return new Response(JSON.stringify({ message: "missing", code: "missing" }), { status: 404 });
     };
     const client = createDocumensoClient({
-      baseUrl: "https://app.documenso.com/api/v2",
-      token: "Bearer api_secret_token",
-      templateId: "25481",
+      baseUrl: " https://app.documenso.com/api/v2 ",
+      token: "Bearer api_secret_token\u200b\n",
+      templateId: "25481\u200b",
       fetchImpl,
       log: (line) => lines.push(line),
     });
@@ -342,6 +342,56 @@ test("Documenso accepts an envelope id or a numeric template id and logs without
     assert.equal(logged.some((item) => item.step === "template.get" && item.status === 200), true);
     assert.equal(logged.some((item) => item.step === "envelope.distribute" && item.status === 200), true);
     assert.equal(lines.join("\n").includes("api_secret_token"), false);
+
+    const failed = [];
+    const cause = new Error("getaddrinfo ENOTFOUND app.documenso.com api_secret_token");
+    cause.code = "ENOTFOUND";
+    cause.name = "Error";
+    const broken = createDocumensoClient({
+      baseUrl: "https://app.documenso.com/api/v2",
+      token: "api_secret_token",
+      templateId: "envelope_template",
+      fetchImpl: async () => { throw new TypeError("fetch failed", { cause }); },
+      log: (line) => failed.push(line),
+    });
+    await assert.rejects(
+      () => broken.createForSigner({ name: "Signer", email: "signer@example.com", externalId: "lead-1" }),
+      /could not be reached/,
+    );
+    const failure = JSON.parse(failed.at(-1));
+    assert.equal(failure.step, "envelope.get");
+    assert.equal(failure.status, 0);
+    assert.equal(failure.code, "ENOTFOUND");
+    assert.equal(failure.cause, "Error");
+    assert.match(failure.message, /ENOTFOUND/);
+    assert.equal(failure.message.includes("api_secret_token"), false);
+
+    const shape = documensoConfigShape({
+      DOCUMENSO_BASE_URL: "not a url",
+      DOCUMENSO_TEMPLATE_ID: "envelope_cksvtwubbmfinvsa ",
+      DOCUMENSO_API_TOKEN: "api_ZZZsecret\u200b",
+    });
+    assert.equal(shape.host, "invalid URL");
+    assert.equal(shape.pathname, "invalid URL");
+    assert.equal(shape.templateIdOk, false);
+    assert.equal(shape.tokenStartsWithApi, true);
+    assert.equal(shape.tokenHasWhitespace, false);
+    assert.equal(shape.tokenHasNonPrintable, true);
+    assert.equal(shape.tokenLength, "api_ZZZsecret\u200b".length);
+    assert.equal(JSON.stringify(shape).includes("ZZZsecret"), false);
+    const clean = documensoConfigShape({
+      DOCUMENSO_BASE_URL: "https://app.documenso.com/api/v2",
+      DOCUMENSO_TEMPLATE_ID: "envelope_cksvtwubbmfinvsa",
+      DOCUMENSO_API_TOKEN: "api_clean",
+    });
+    assert.equal(clean.host, "app.documenso.com");
+    assert.equal(clean.pathname, "/api/v2");
+    assert.equal(clean.templateIdOk, true);
+    assert.equal(clean.tokenHasWhitespace, false);
+    assert.equal(clean.tokenHasNonPrintable, false);
+    const spaced = documensoConfigShape({ DOCUMENSO_API_TOKEN: "api_x y" });
+    assert.equal(spaced.tokenHasWhitespace, true);
+    assert.equal(JSON.stringify(spaced).includes("api_x"), false);
 });
 
 test("the HubSpot document note cannot carry a file or a TIN", () => {

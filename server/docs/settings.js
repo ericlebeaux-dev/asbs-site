@@ -1,3 +1,5 @@
+import { sanitizeDocumensoToken, sanitizeTemplateId } from "./documenso.js";
+
 const DEFAULT_MAX = 10 * 1024 * 1024;
 
 function text(value) {
@@ -15,8 +17,8 @@ export function docsSettings(env = {}) {
     keyId: text(env.DOCS_S3_KEY_ID),
     secret: text(env.DOCS_S3_SECRET),
     maxBytes,
-    documensoToken: text(env.DOCUMENSO_API_TOKEN),
-    documensoTemplateId: text(env.DOCUMENSO_TEMPLATE_ID),
+    documensoToken: sanitizeDocumensoToken(env.DOCUMENSO_API_TOKEN),
+    documensoTemplateId: sanitizeTemplateId(env.DOCUMENSO_TEMPLATE_ID),
     documensoBaseUrl: text(env.DOCUMENSO_BASE_URL) || "https://app.documenso.com/api/v2",
     deleteCompleted: text(env.DOCUMENSO_DELETE_COMPLETED) === "1",
   };

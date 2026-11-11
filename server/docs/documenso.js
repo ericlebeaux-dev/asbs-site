@@ -1,7 +1,45 @@
-function normalizeToken(value) {
-  let token = String(value || "").trim().replace(/^['"]|['"]$/g, "");
+function stripZeroWidth(value) {
+  return String(value || "").replace(/[\u200B-\u200D\u2060\uFEFF]/g, "");
+}
+
+export function sanitizeDocumensoToken(value) {
+  let token = stripZeroWidth(value).trim().replace(/^['"]|['"]$/g, "");
   token = token.replace(/^Bearer\s+/i, "").trim();
-  return token.replace(/[\r\n]/g, "");
+  return token.replace(/[^\x21-\x7E]/g, "");
+}
+
+export function sanitizeTemplateId(value) {
+  return stripZeroWidth(value).replace(/[^\x21-\x7E]/g, "");
+}
+
+export function documensoConfigShape(env = {}) {
+  const rawBase = env.DOCUMENSO_BASE_URL;
+  const baseSource = rawBase == null || rawBase === ""
+    ? "https://app.documenso.com/api/v2"
+    : String(rawBase);
+  let host = "invalid URL";
+  let pathname = "invalid URL";
+  try {
+    const parsed = new URL(baseSource);
+    host = parsed.host;
+    pathname = parsed.pathname;
+  } catch {
+    host = "invalid URL";
+    pathname = "invalid URL";
+  }
+  const template = String(env.DOCUMENSO_TEMPLATE_ID || "");
+  const token = String(env.DOCUMENSO_API_TOKEN || "");
+  return {
+    event: "documenso_config",
+    host,
+    pathname,
+    templateLength: template.length,
+    templateIdOk: /^[A-Za-z0-9_]+$/.test(template),
+    tokenLength: token.length,
+    tokenStartsWithApi: token.startsWith("api_"),
+    tokenHasWhitespace: /\s/.test(token),
+    tokenHasNonPrintable: /[^\x20-\x7E]/.test(token),
+  };
 }
 
 function scrub(value, token) {
@@ -12,15 +50,17 @@ function scrub(value, token) {
   return text.slice(0, 300);
 }
 
-function logStep(log, step, { status = 0, ok = false, code = "", message = "" } = {}, token = "") {
-  log(JSON.stringify({
+function logStep(log, step, { status = 0, ok = false, code = "", cause = "", message = "" } = {}, token = "") {
+  const line = {
     event: "documenso",
     step,
     status,
     ok: Boolean(ok),
     code: scrub(code, token).slice(0, 80),
     message: scrub(message, token),
-  }));
+  };
+  if (cause) line.cause = scrub(cause, token).slice(0, 80);
+  log(JSON.stringify(line));
 }
 
 function fail(status, message) {
@@ -73,9 +113,9 @@ function isPdf(bytes) {
 }
 
 export function createDocumensoClient({ baseUrl, token, templateId, fetchImpl, deleteCompleted = false, log = console.log }) {
-  const root = String(baseUrl || "").replace(/\/$/, "");
-  const authToken = normalizeToken(token);
-  const configuredId = String(templateId || "").trim();
+  const root = String(baseUrl || "").trim().replace(/\/$/, "");
+  const authToken = sanitizeDocumensoToken(token);
+  const configuredId = sanitizeTemplateId(templateId);
   const writeLog = (step, details) => logStep(log, step, details, authToken);
 
   function headers(extra = {}) {
@@ -89,7 +129,14 @@ export function createDocumensoClient({ baseUrl, token, templateId, fetchImpl, d
         headers: headers(options.headers || {}),
       });
     } catch (error) {
-      writeLog(step, { status: 0, ok: false, message: error?.message || "network" });
+      const cause = error?.cause;
+      writeLog(step, {
+        status: 0,
+        ok: false,
+        code: cause?.code || "",
+        cause: cause?.name || "",
+        message: cause?.message || error?.message || "network",
+      });
       fail(502, "The signature service could not be reached.");
     }
   }
