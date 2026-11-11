@@ -28,11 +28,11 @@ Confirmation email is sent only when `GOOGLE_GMAIL_REFRESH_TOKEN` is set on the 
 
 See `docs/STAGING.md`, `docs/GOOGLE_CALENDAR_SETUP.md`, `docs/DEPLOYMENT.md`, and `docs/OWNER_APPROVAL_CHECKLIST.md`.
 
-## Staging document proof of concept
+## Document upload and signature
 
-`GET /poc/onboarding` on the staging API is off unless `DOCS_ENABLED=1` and the Backblaze B2 settings below are all set. It is not part of the GitHub Pages site. The page says not to upload real tax documents. The authorization form text is a sample created in Documenso, not in this repository.
+`GET /poc/onboarding` is served by the Render API. It stays off unless `DOCS_ENABLED=1` and the Backblaze B2 settings below are all set. It is not a GitHub Pages file. The authority step is labeled “Sample - pending attorney review”. The form text is the sample created in Documenso, not in this repository.
 
-The browser posts each file to the staging API as `multipart/form-data`. The API checks the type, the 10 MB cap, and the file's first bytes, then writes the object with SSE-B2 (`ServerSideEncryption: AES256`). It does not use a presigned PUT, and it does not accept the file as base64 JSON. The staging bucket is `asbs-intake-docs-staging` in `us-west-004` (`https://s3.us-west-004.backblazeb2.com`). The application key cannot change bucket settings, and custom CORS rules cannot be set from the B2 web UI, so the bucket stays at the default of no origins. Uploads do not need a CORS origin. An owner download is a 60-second presigned GET opened as a normal browser navigation, which also does not need CORS. The upload ticket lasts about 15 minutes and allows 5 files. Leave `DOCS_ENABLED` unset until the page should be turned on. While it is unset, `/poc/onboarding` and `/api/poc/` respond 404 and the rest of the API is unchanged.
+The browser posts each file to the API as `multipart/form-data`. The API checks the type, the 10 MB cap, and the file's first bytes, then writes the object with SSE-B2 (`ServerSideEncryption: AES256`). It does not use a presigned PUT, and it does not accept the file as base64 JSON. The bucket name, region, endpoint, and keys come from the environment. The free B2 account already uses region `us-west-004` and endpoint `https://s3.us-west-004.backblazeb2.com`. The application key cannot change bucket settings, and custom CORS rules cannot be set from the B2 web UI, so the bucket stays at the default of no origins. Uploads do not need a CORS origin. An owner download is a 60-second presigned GET opened as a normal browser navigation, which also does not need CORS. The upload ticket lasts about 15 minutes and allows 5 files. While `DOCS_ENABLED` is unset, `/poc/onboarding` and `/api/poc/` respond 404 and the rest of the API is unchanged.
 
 Turnstile on this page fails closed, including when siteverify cannot be reached, and the hostname must match the request host. The normal intake form still treats a Turnstile outage as allow-through. Leave `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` unset to keep the honeypot-only behavior.
 
@@ -42,7 +42,7 @@ No TIN or file bytes are written to HubSpot, logs, or analytics. A short status 
 
 | Variable | Purpose |
 | --- | --- |
-| DOCS_ENABLED | `1` turns the proof of concept on |
+| DOCS_ENABLED | `1` turns document upload on |
 | DOCS_S3_ENDPOINT | B2 S3 endpoint |
 | DOCS_S3_REGION | B2 region, such as `us-west-004` |
 | DOCS_S3_BUCKET | Private bucket name |

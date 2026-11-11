@@ -125,7 +125,8 @@ test("upload tickets expire, cannot be reused, and reject the wrong type, size, 
     const page = await fetch(ctx.base + "/poc/onboarding");
     const html = await page.text();
     assert.equal(page.status, 200);
-    assert.match(html, /STAGING PROOF OF CONCEPT, do not upload real tax documents/);
+    assert.match(html, /Sample - pending attorney review/);
+    assert.equal(html.includes("STAGING"), false);
     assert.match(html, /noindex/);
     assert.match(page.headers.get("x-robots-tag"), /noindex/);
     assert.match(html, /body\.append\("file"/);

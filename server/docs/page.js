@@ -5,7 +5,7 @@ export function pocPage() {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Staging document check | ASBS</title>
+<title>Document check | ASBS</title>
 <style>
   :root { color-scheme: light; --navy:#102033; --ivory:#f6f3ec; --paper:#fffdf8; --gold:#7a5a16; --ink:#1c2430; --line:#ddd6c8; }
   * { box-sizing: border-box; }
@@ -35,7 +35,6 @@ export function pocPage() {
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<p class="banner" role="status">STAGING PROOF OF CONCEPT, do not upload real tax documents.</p>
 <header>
   <p style="letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-size:.78rem;font-weight:700">American Standard Business Solutions</p>
   <h1>Document check</h1>
@@ -59,10 +58,10 @@ export function pocPage() {
     <div class="row"><button type="submit">Upload</button></div>
   </form>
   <section id="signCard" class="card" hidden>
-    <h2>Signature</h2>
-    <p>The sample authorization form is created in Documenso. This page does not contain that form's text. Documenso emails the signing link.</p>
+    <h2>Sample - pending attorney review</h2>
+    <p>Documenso emails the signing link. This page does not contain the form's text.</p>
     <div class="row">
-      <button type="button" id="signButton">Email the sample form</button>
+      <button type="button" id="signButton">Email the form</button>
       <button type="button" class="secondary" id="statusButton">Check signature status</button>
     </div>
     <p id="signLink"></p>
