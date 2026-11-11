@@ -9,7 +9,7 @@ services:
     plan: free
     region: oregon
     branch: cursor/asbs-website-completion-0d43
-    autoDeployTrigger: commit
+    autoDeployTrigger: off
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
