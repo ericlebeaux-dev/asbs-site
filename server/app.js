@@ -16,6 +16,7 @@ import {
   validateBooking,
   validateDocument,
   validateInquiry,
+  isQuietSpam,
   validateIntake,
   validateQuote,
   validateVendor,
@@ -141,6 +142,10 @@ async function routeApi(req, res, url, ctx) {
   }
   if (req.method === "POST" && url.pathname === "/api/intake") {
     const body = await readJson(req);
+    if (isQuietSpam(body, config.now().getTime())) {
+      sendJson(res, 201, quietIntake());
+      return;
+    }
     const fields = validateIntake(body);
     const followUp = new Date(config.now().getTime() + 24 * 60 * 60 * 1000).toISOString();
     const saved = await store.createCustomerLead(fields, { stage: "new_lead", followUp });
@@ -177,6 +182,10 @@ async function routeApi(req, res, url, ctx) {
   }
   if (req.method === "POST" && url.pathname === "/api/vendors") {
     const body = await readJson(req);
+    if (isQuietSpam(body, config.now().getTime())) {
+      sendJson(res, 201, quietVendor());
+      return;
+    }
     const document = validateDocument(body.document);
     const fields = validateVendor(body);
     const saved = await store.createVendorLead(fields);
@@ -453,7 +462,7 @@ function health(config, calendar, mailer) {
     minimumNoticeHours: config.minNoticeHours,
     bufferMinutes: config.bufferMinutes,
     bookingHorizonDays: HORIZON_DAYS,
-    intakeRevision: "2026-11-11-hubspot",
+    intakeRevision: "2026-11-11-readiness",
   };
 }
 
@@ -1031,8 +1040,30 @@ function countBy(items, fn) {
   return out;
 }
 
+function isProxyAddress(ip) {
+  const normalized = String(ip || "").replace(/^::ffff:/, "");
+  if (normalized === "127.0.0.1" || normalized === "::1") return true;
+  if (normalized.startsWith("10.") || normalized.startsWith("192.168.")) return true;
+  const bits = normalized.match(/^172\.(\d+)\./);
+  if (bits) {
+    const second = Number(bits[1]);
+    if (second >= 16 && second <= 31) return true;
+  }
+  return normalized.startsWith("fc") || normalized.startsWith("fd");
+}
+
+export function clientIp(req) {
+  const socketIp = req.socket?.remoteAddress || "unknown";
+  const forwarded = req.headers?.["x-forwarded-for"];
+  if (forwarded && isProxyAddress(socketIp)) {
+    const first = String(forwarded).split(",")[0].trim();
+    if (first && first.length <= 80 && /^[0-9a-fA-F:.]+$/.test(first)) return first;
+  }
+  return socketIp;
+}
+
 function allowRate(ctx, req, bucket) {
-  const ip = req.socket.remoteAddress || "unknown";
+  const ip = clientIp(req);
   const key = `${ip}:${bucket.startsWith("POST /api/events") ? "events" : bucket.startsWith("POST /api/auth/login") ? "login" : "write"}`;
   if (req.method === "GET") return true;
   const limit = key.endsWith("events") ? 120 : key.endsWith("login") ? 8 : 100;
@@ -1059,10 +1090,32 @@ function applyCors(req, res) {
   if (!PRODUCTION_ORIGINS.has(origin)) return null;
   res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader("Access-Control-Max-Age", "86400");
   return origin;
+}
+
+function quietIntake() {
+  return {
+    leadId: crypto.randomUUID(),
+    duplicate: false,
+    stage: "new_lead",
+    email: { sent: false },
+    hubspot: { ok: true, status: 200 },
+    message: receipt("Your intake was received. It does not hire ASBS or authorize any submission on your behalf.", { sent: false }),
+  };
+}
+
+function quietVendor() {
+  return {
+    leadId: crypto.randomUUID(),
+    duplicate: false,
+    documentId: null,
+    email: { sent: false },
+    message: receipt("Your vendor registration was saved privately. It does not guarantee teaming, subcontracting, or a contract award.", { sent: false }),
+  };
 }
 
 function setSecurityHeaders(res) {
