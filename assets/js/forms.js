@@ -576,11 +576,21 @@
         existing.addEventListener("load", function () { render(key); });
       }
     }
+    function arm(key) {
+      if (!key) return;
+      setRequired(true);
+      var form = slot.closest("form") || slot.parentElement;
+      if (!form || form.dataset.turnstileArmed === "yes") return;
+      form.dataset.turnstileArmed = "yes";
+      function start() { useKey(key); }
+      form.addEventListener("focusin", start);
+      form.addEventListener("input", start);
+    }
     document.addEventListener("asbs:health", function (event) {
       var turnstile = event.detail && event.detail.turnstile;
-      if (turnstile && turnstile.enabled && turnstile.siteKey) useKey(turnstile.siteKey);
+      if (turnstile && turnstile.enabled && turnstile.siteKey) arm(turnstile.siteKey);
     });
-    if (window.ASBS && window.ASBS.turnstileSiteKey) useKey(window.ASBS.turnstileSiteKey);
+    if (window.ASBS && window.ASBS.turnstileSiteKey) arm(window.ASBS.turnstileSiteKey);
   }
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -591,7 +601,7 @@
     document.addEventListener("asbs:offline", function () {
       var alert = document.getElementById("formAlert");
       if (alert && !document.getElementById("bookingForm")) {
-        window.ASBS.showMessage(alert, "This form needs the ASBS staging server. It is not available on the static site alone. Call (281) 954-5167.", "error");
+        window.ASBS.showMessage(alert, "The form could not reach ASBS. Call (281) 954-5167.", "error");
       }
     });
   });

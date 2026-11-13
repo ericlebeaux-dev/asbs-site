@@ -21,6 +21,7 @@ export function docsSettings(env = {}) {
     documensoTemplateId: sanitizeTemplateId(env.DOCUMENSO_TEMPLATE_ID),
     documensoBaseUrl: text(env.DOCUMENSO_BASE_URL) || "https://app.documenso.com/api/v2",
     deleteCompleted: text(env.DOCUMENSO_DELETE_COMPLETED) === "1",
+    pageEnabled: text(env.POC_PAGE_ENABLED) === "1",
   };
   settings.ready = Boolean(
     settings.enabled

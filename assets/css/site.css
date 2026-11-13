@@ -6,17 +6,19 @@
 */
 
 :root {
-  --asbs-navy: #102033;
-  --asbs-navy-2: #1a3148;
+  --asbs-charcoal: #322e2a;
+  --asbs-brass: #7a5610;
+  --asbs-navy: var(--asbs-charcoal);
+  --asbs-navy-2: #463f39;
   --asbs-ivory: #f6f3ec;
   --asbs-paper: #fffdf8;
-  --asbs-ink: #1c2430;
-  --asbs-muted: #3e4a59;
+  --asbs-ink: var(--asbs-charcoal);
+  --asbs-muted: #5c5348;
   --asbs-line: #ddd6c8;
-  --asbs-accent: #7a5a16;
+  --asbs-accent: var(--asbs-brass);
   --asbs-accent-on-dark: #f3ddb0;
-  --asbs-link: #0d5c66;
-  --asbs-focus: #0d5c66;
+  --asbs-link: var(--asbs-brass);
+  --asbs-focus: #5c4308;
   --font-display: Palatino, "Palatino Linotype", "Iowan Old Style", Georgia, serif;
   --font-body: "Segoe UI", system-ui, sans-serif;
   --space: 1.25rem;
@@ -186,7 +188,7 @@ a:hover { text-decoration: none; }
 
 .button:active,
 .nav-cta:active {
-  background: #0c1826;
+  background: #241f1c;
 }
 
 .button.secondary {
@@ -213,6 +215,17 @@ a:hover { text-decoration: none; }
 .desktop-nav a:not(.nav-cta):active,
 .mobile-nav a:active {
   color: #5c4310;
+}
+
+.header-call {
+  display: none;
+  margin-left: auto;
+  color: var(--asbs-charcoal);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  min-height: 2.75rem;
+  align-items: center;
 }
 
 .nav-toggle {
@@ -245,6 +258,7 @@ a:hover { text-decoration: none; }
 
 @media (max-width: 959px) {
   .desktop-nav { display: none; }
+  .header-call { display: inline-flex; }
 }
 
 @media (min-width: 960px) {

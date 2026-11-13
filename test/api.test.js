@@ -121,8 +121,14 @@ test("health, packages, and static protections", async () => {
     assert.equal(health.data.payments.livePackageCheckout, false);
     assert.equal(health.data.bookingHorizonDays, 365);
     assert.equal(health.data.mail.configured, false);
-    assert.equal(health.data.mail.from, "americanstandardsolutions@gmail.com");
+    assert.equal(health.data.mail.from, undefined);
+    assert.equal(JSON.stringify(health.data).includes("americanstandardsolutions@gmail.com"), false);
     assert.equal(health.data.mail.transport, "gmail_api");
+    const healthz = await api(ctx.base, "GET", "/healthz");
+    assert.equal(healthz.status, 200);
+    assert.equal(healthz.data.ok, true);
+    assert.equal(healthz.data.mail, false);
+    assert.equal(JSON.stringify(healthz.data).includes("@"), false);
 
     const home = await fetch(ctx.base + "/");
     assert.equal(home.status, 200);
