@@ -27,6 +27,14 @@ test("confirmation and owner notice name the request and keep the cancellation c
   assert.match(messages.customer.text, /Eric LeBeaux\nAmerican Standard Business Solutions\n\(281\) 954-5167/);
   assert.equal(messages.customer.subject, "Thank you for contacting American Standard Business Solutions");
   assert.equal(messages.owner.to, "americanstandardsolutions@gmail.com");
+  const custom = buildMessages({
+    kind: "intake",
+    email: "visitor@example.com",
+    ownerSubject: "[TEST] ASBS audit fix",
+    summaryLines: [],
+  }, { owner: "americanstandardsolutions@gmail.com" });
+  assert.equal(custom.owner.subject, "[TEST] ASBS audit fix");
+  assert.equal(custom.owner.to, "americanstandardsolutions@gmail.com");
   assert.doesNotMatch(messages.owner.text, /secret-code/);
   assert.match(messages.owner.text, /visitor@example.com/);
   const failed = buildMessages({ kind: "quote", email: "visitor@example.com", summaryLines: ["Services: Paper"] }, { customerSent: false });

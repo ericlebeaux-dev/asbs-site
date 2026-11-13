@@ -95,6 +95,14 @@ async function handle(req, res, ctx) {
     res.end();
     return;
   }
+  if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/api/healthz")) {
+    sendJson(res, 200, healthFlags(ctx.config, ctx.mailer));
+    return;
+  }
+  if (req.method === "GET" && (url.pathname === "/dashboard.html" || url.pathname === "/command.html")) {
+    servePrivatePage(req, res, url.pathname, ctx.config.rootDir);
+    return;
+  }
   if (req.method === "GET" && url.pathname === "/poc/onboarding") {
     serveDocsPage(req, res, ctx);
     return;
@@ -459,6 +467,14 @@ async function routeApi(req, res, url, ctx) {
   sendJson(res, 404, { message: "That address was not found." });
 }
 
+function healthFlags(config, mailer) {
+  return {
+    ok: true,
+    mail: mailer?.configured === true,
+    turnstile: turnstilePublic(config.env).enabled === true,
+  };
+}
+
 function health(config, calendar, mailer) {
   return {
     ok: true,
@@ -472,7 +488,6 @@ function health(config, calendar, mailer) {
     dashboard: { configured: Boolean(config.dashboardPassword) },
     mail: {
       configured: mailer?.configured === true,
-      from: "americanstandardsolutions@gmail.com",
       transport: "gmail_api",
     },
     payments: {
@@ -1206,6 +1221,21 @@ const MIME = {
   ".webmanifest": "application/manifest+json",
 };
 
+function servePrivatePage(req, res, pathname, rootDir) {
+  const file = path.join(rootDir, "_private", path.basename(pathname));
+  if (!file.startsWith(path.join(rootDir, "_private")) || !fs.existsSync(file)) {
+    sendJson(res, 404, { message: "That address was not found." });
+    return;
+  }
+  const body = fs.readFileSync(file);
+  res.writeHead(200, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store",
+    "X-Robots-Tag": "noindex, nofollow",
+  });
+  res.end(body);
+}
+
 function serveStatic(req, res, url, rootDir) {
   if (req.method !== "GET" && req.method !== "HEAD") {
     sendJson(res, 405, { message: "That method is not allowed." });
@@ -1223,7 +1253,7 @@ function serveStatic(req, res, url, rootDir) {
   const top = relative.split(path.sep)[0];
   const hidden = relative.startsWith("..")
     || path.isAbsolute(relative)
-    || relative.split(path.sep).some((part) => part.startsWith("."))
+    || relative.split(path.sep).some((part) => part.startsWith(".") || part.startsWith("_"))
     || ["server", "data", "test", "docs", "node_modules"].includes(top);
   if (hidden) {
     sendJson(res, 404, { message: "That address was not found." });

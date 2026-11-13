@@ -30,6 +30,7 @@ function docsEnv(extra = {}) {
     TURNSTILE_SECRET_KEY: "turnstile-secret",
     DOCUMENSO_API_TOKEN: "api_test",
     DOCUMENSO_TEMPLATE_ID: "envelope_template",
+    POC_PAGE_ENABLED: "1",
     ...extra,
   };
 }
