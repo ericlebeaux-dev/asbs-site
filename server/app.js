@@ -5,6 +5,7 @@ import path from "node:path";
 import { clearCookie, passwordsMatch, readCookie, sessionCookie, signSession, verifySession } from "./auth.js";
 import { calendarFromEnv } from "./calendar.js";
 import { mailerFromEnv } from "./mail.js";
+import { applyPrivateUpload, sheetsFromEnv } from "./sheets.js";
 import { PACKAGES, PRICING_STATUS } from "./packages.js";
 import { HORIZON_DAYS, consultationType, generateSlots } from "./slots.js";
 import { createStore } from "./store.js";
@@ -58,6 +59,7 @@ export function createApp(options = {}) {
   const store = options.store || createStore(config.dataDir);
   const calendar = options.calendar || calendarFromEnv(config.env);
   const mailer = options.mailer || mailerFromEnv(config.env);
+  const sheets = options.sheets || sheetsFromEnv(config.env);
   const hubspot = {
     fetchImpl: options.hubspotFetch || globalThis.fetch,
     timeoutMs: options.hubspotTimeoutMs,
@@ -71,6 +73,7 @@ export function createApp(options = {}) {
       store,
       calendar,
       mailer,
+      sheets,
       limits,
       hubspot,
       turnstileFetch,
@@ -124,7 +127,7 @@ async function routeApi(req, res, url, ctx) {
   if (await handleDocsRequest(req, res, url, ctx)) return;
 
   if (req.method === "GET" && url.pathname === "/api/health") {
-    sendJson(res, 200, health(config, calendar, mailer));
+    sendJson(res, 200, health(config, calendar, mailer, ctx.sheets));
     return;
   }
   if (req.method === "GET" && url.pathname === "/api/packages") {
@@ -192,8 +195,15 @@ async function routeApi(req, res, url, ctx) {
         codeSummary("NAICS", fields.naics),
         codeSummary("NIGP", fields.nigp),
         fields.code_description ? `Work described: ${fields.code_description}` : "",
+        ...documentSummary(fields),
       ].filter(Boolean),
     });
+    const sheetResult = await recordSheets(ctx.sheets, sheetProfile(fields, {
+      company: fields.organization,
+      role: "Client",
+      source: "website intake",
+      now: config.now(),
+    }));
     const hubspotResult = await forwardIntakeToHubSpot(ctx, fields, saved.lead, req);
     await remember(store, config, "intake");
     sendJson(res, saved.duplicate ? 200 : 201, {
@@ -201,6 +211,7 @@ async function routeApi(req, res, url, ctx) {
       duplicate: saved.duplicate,
       stage: saved.lead.stage,
       email: { sent: mail.sent === true },
+      sheets: { written: sheetResult.written === true },
       hubspot: { ok: hubspotResult.ok === true, status: Number(hubspotResult.status) || 0 },
       message: saved.duplicate
         ? receipt("We already had a record for this email, so we updated it instead of creating a second one.", mail)
@@ -235,14 +246,26 @@ async function routeApi(req, res, url, ctx) {
         `Email: ${fields.email}`,
         `Phone: ${fields.phone || ""}`,
         `Services: ${fields.services}`,
+        ...documentSummary(fields),
       ],
     });
+    const privateUpload = document && (fields.documentKind === "license" || fields.documentKind === "coi")
+      ? fields.documentKind
+      : "";
+    const sheetResult = await recordSheets(ctx.sheets, sheetProfile(fields, {
+      company: fields.legalName,
+      role: "Partner",
+      source: "website partner",
+      now: config.now(),
+      privateUpload,
+    }));
     await remember(store, config, "vendor");
     sendJson(res, saved.duplicate ? 200 : 201, {
       leadId: saved.lead.id,
       duplicate: saved.duplicate,
       documentId,
       email: { sent: mail.sent === true },
+      sheets: { written: sheetResult.written === true },
       message: receipt("Your vendor registration was saved privately. It does not guarantee teaming, subcontracting, or a contract award.", mail),
     });
     return;
@@ -475,7 +498,7 @@ function healthFlags(config, mailer) {
   };
 }
 
-function health(config, calendar, mailer) {
+function health(config, calendar, mailer, sheets) {
   return {
     ok: true,
     environment: config.environment,
@@ -490,6 +513,7 @@ function health(config, calendar, mailer) {
       configured: mailer?.configured === true,
       transport: "gmail_api",
     },
+    sheets: { configured: sheets?.configured === true },
     payments: {
       livePackageCheckout: false,
       pricingStatus: PRICING_STATUS,
@@ -861,6 +885,60 @@ async function reschedule(config, store, calendar, id, body) {
       message: "The appointment was moved. The previous time is no longer held.",
     };
   });
+}
+
+function withBonding(insurance, bonding) {
+  const rows = Array.isArray(insurance) ? insurance.map((row) => ({ ...row })) : [];
+  const text = String(bonding || "").trim();
+  if (text) rows.push({ coverageType: "Bonding", limits: text, carrier: "", expiry: "", coiLink: "" });
+  return rows;
+}
+
+function sheetProfile(fields, { company, role, source, now, privateUpload = "" }) {
+  const profile = {
+    company,
+    role,
+    status: "New",
+    naics: fields.naics || "",
+    nigp: fields.nigp || "",
+    certifications: fields.certifications || "",
+    consent: true,
+    source,
+    verifiedOn: now.toISOString().slice(0, 10),
+    licenses: fields.licenses || [],
+    insurance: withBonding(fields.insurance, fields.bonding),
+    pastJobs: fields.pastJobs || [],
+    references: fields.references || [],
+    resumes: fields.resumes || [],
+    gaps: [],
+  };
+  return applyPrivateUpload(profile, privateUpload);
+}
+
+function documentSummary(fields) {
+  const lines = [];
+  const add = (label, rows) => {
+    const count = Array.isArray(rows) ? rows.length : 0;
+    if (count) lines.push(`${label}: ${count}`);
+  };
+  add("Licenses", fields.licenses);
+  add("Insurance", fields.insurance);
+  if (String(fields.bonding || "").trim()) lines.push("Bonding: included");
+  add("Past jobs", fields.pastJobs);
+  add("References", fields.references);
+  if (fields.referencesNote) lines.push("Reference notes: included");
+  add("Resumes", fields.resumes);
+  return lines;
+}
+
+async function recordSheets(sheets, profile) {
+  try {
+    if (!sheets || typeof sheets.appendProfile !== "function") return { written: false };
+    const result = await sheets.appendProfile(profile);
+    return { written: result?.written === true };
+  } catch {
+    return { written: false };
+  }
 }
 
 async function confirm(mailer, submission) {

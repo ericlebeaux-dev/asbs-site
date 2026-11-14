@@ -1,4 +1,148 @@
 (function () {
+  function relabelRepeats(form) {
+    form.querySelectorAll("[data-repeat]").forEach(function (set) {
+      var key = set.getAttribute("data-repeat");
+      var title = set.getAttribute("data-label") || "Row";
+      var max = Number(set.getAttribute("data-max") || "8");
+      var items = set.querySelectorAll("[data-rows] > [data-row]");
+      items.forEach(function (row, index) {
+        var heading = row.querySelector("[data-row-label]");
+        if (heading) heading.textContent = title + " " + (index + 1);
+        var remove = row.querySelector("[data-remove]");
+        if (remove) remove.setAttribute("aria-label", "Remove " + title + " " + (index + 1));
+        row.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+          radio.name = key + "-" + radio.getAttribute("data-field") + "-" + index;
+        });
+      });
+      var add = set.querySelector("[data-add]");
+      if (add) add.disabled = items.length >= max;
+    });
+  }
+
+  function bindRepeats(form) {
+    if (form.dataset.repeatsBound === "true") {
+      relabelRepeats(form);
+      return;
+    }
+    form.dataset.repeatsBound = "true";
+    form.querySelectorAll("[data-repeat]").forEach(function (set) {
+      var rows = set.querySelector("[data-rows]");
+      var template = set.querySelector("template");
+      var add = set.querySelector("[data-add]");
+      var status = set.querySelector("[data-repeat-status]");
+      var title = set.getAttribute("data-label") || "Row";
+      var max = Number(set.getAttribute("data-max") || "8");
+      if (add) {
+        add.addEventListener("click", function () {
+          if (!template || !rows) return;
+          if (rows.querySelectorAll("[data-row]").length >= max) return;
+          rows.appendChild(template.content.firstElementChild.cloneNode(true));
+          relabelRepeats(form);
+          var row = rows.lastElementChild;
+          var focusable = row && row.querySelector("input, select, textarea");
+          if (focusable) focusable.focus();
+          if (status) status.textContent = title + " " + rows.querySelectorAll("[data-row]").length + " added.";
+        });
+      }
+      if (rows) {
+        rows.addEventListener("click", function (event) {
+          var button = event.target.closest("[data-remove]");
+          if (!button || !rows.contains(button)) return;
+          var row = button.closest("[data-row]");
+          if (row) row.remove();
+          relabelRepeats(form);
+          if (status) status.textContent = title + " removed.";
+          if (add) add.focus();
+        });
+      }
+    });
+    relabelRepeats(form);
+  }
+
+  function rowFilled(row) {
+    var filled = false;
+    row.querySelectorAll("[data-field]").forEach(function (field) {
+      if (field.type === "radio") return;
+      if (String(field.value || "").trim()) filled = true;
+    });
+    return filled;
+  }
+
+  function collectRepeats(form) {
+    var sets = {};
+    form.querySelectorAll("[data-repeat]").forEach(function (set) {
+      var key = set.getAttribute("data-repeat");
+      var rows = [];
+      set.querySelectorAll("[data-rows] > [data-row]").forEach(function (row) {
+        if (!rowFilled(row)) return;
+        var item = {};
+        row.querySelectorAll("[data-field]").forEach(function (field) {
+          var name = field.getAttribute("data-field");
+          if (field.type === "radio") {
+            if (field.checked) item[name] = field.value;
+            return;
+          }
+          var value = String(field.value || "").trim();
+          if (value) item[name] = value;
+        });
+        if (key === "references" && !item.permission) item.permission = "";
+        rows.push(item);
+      });
+      sets[key] = rows;
+    });
+    return sets;
+  }
+
+  function fillRepeats(form, repeats) {
+    if (!repeats) return;
+    Object.keys(repeats).forEach(function (key) {
+      var set = form.querySelector('[data-repeat="' + key + '"]');
+      if (!set) return;
+      var rows = set.querySelector("[data-rows]");
+      var template = set.querySelector("template");
+      if (!rows || !template) return;
+      rows.replaceChildren();
+      var items = repeats[key] || [];
+      if (!items.length) rows.appendChild(template.content.firstElementChild.cloneNode(true));
+      items.forEach(function (item) {
+        var row = template.content.firstElementChild.cloneNode(true);
+        rows.appendChild(row);
+        row.querySelectorAll("[data-field]").forEach(function (field) {
+          var name = field.getAttribute("data-field");
+          var value = item[name] == null ? "" : String(item[name]);
+          if (field.type === "radio") field.checked = field.value === value;
+          else field.value = value;
+        });
+      });
+    });
+    relabelRepeats(form);
+  }
+
+  function repeatErrors(form) {
+    var errors = [];
+    form.querySelectorAll("[data-rows] > [data-row]").forEach(function (row) {
+      row.querySelectorAll("[data-link]").forEach(function (field) {
+        var value = String(field.value || "").trim();
+        if (!value) return;
+        if (!/^https?:\/\//i.test(value)) {
+          errors.push("Links must start with https://.");
+          field.setAttribute("aria-invalid", "true");
+        } else {
+          field.removeAttribute("aria-invalid");
+        }
+      });
+    });
+    form.querySelectorAll('[data-repeat="references"] [data-rows] > [data-row]').forEach(function (row, index) {
+      if (!rowFilled(row)) return;
+      var chosen = "";
+      row.querySelectorAll('[data-field="permission"]').forEach(function (field) {
+        if (field.checked) chosen = field.value;
+      });
+      if (chosen !== "yes" && chosen !== "no") errors.push("Choose permission to contact for reference " + (index + 1) + ".");
+    });
+    return errors;
+  }
+
   function watchIntake() {
     var form = document.getElementById("intakeForm");
     if (!form) return;
@@ -31,25 +175,28 @@
 
     function showStep(next) {
       step = next;
-      var first = document.getElementById("step1");
-      var second = document.getElementById("step2");
-      if (first) first.hidden = next !== 1;
-      if (second) second.hidden = next !== 2;
+      [1, 2, 3].forEach(function (number) {
+        var panel = document.getElementById("step" + number);
+        if (panel) panel.hidden = next !== number;
+      });
       var label = document.getElementById("stepLabel");
-      var text = next === 1 ? "Step 1 of 2" : "Step 2 of 2";
+      var text = "Step " + next + " of 3";
       if (label) label.textContent = text;
       var bar = document.getElementById("stepProgress");
       if (bar) {
         bar.setAttribute("aria-valuenow", String(next));
+        bar.setAttribute("aria-valuemax", "3");
         bar.setAttribute("aria-valuetext", text);
         var fill = bar.querySelector("span");
-        if (fill) fill.style.width = next === 1 ? "50%" : "100%";
+        if (fill) fill.style.width = Math.round((next / 3) * 100) + "%";
       }
       var note = document.getElementById("stepNote");
-      if (note) note.textContent = next === 1
-        ? "About a minute. Office hours are Monday–Friday, 8:00 a.m.–5:00 p.m. Central."
-        : "Optional. Your request is not sent until you submit.";
-      var heading = document.getElementById(next === 1 ? "step1Heading" : "step2Heading");
+      if (note) {
+        if (next === 1) note.textContent = "About a minute. Office hours are Monday–Friday, 8:00 a.m.–5:00 p.m. Central.";
+        else if (next === 2) note.textContent = "Optional. Your request is not sent until you submit.";
+        else note.textContent = "Optional. You can send the request without these documents.";
+      }
+      var heading = document.getElementById("step" + next + "Heading");
       if (heading) heading.focus();
     }
 
@@ -279,6 +426,7 @@
 
     function writeDraft() {
       var data = window.ASBS.formData(form);
+      data._repeats = collectRepeats(form);
       data._step = step;
       localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: new Date().toISOString(), data: data }));
       var banner = document.getElementById("draftBanner");
@@ -303,7 +451,8 @@
       });
       syncContractLocks(null);
       document.dispatchEvent(new CustomEvent("asbs:hydrate-codes"));
-      if (data._step === 2) showStep(2);
+      if (data._repeats) fillRepeats(form, data._repeats);
+      if (data._step === 2 || data._step === 3) showStep(data._step);
     }
 
     function clearDraft() {
@@ -355,15 +504,20 @@
       });
     }
 
+    bindRepeats(form);
     document.getElementById("continueStep").addEventListener("click", function () {
       if (!validateStep1()) return;
       showStep(2);
     });
-    document.getElementById("backStep").addEventListener("click", function () {
-      setAlert("");
-      showStep(1);
+    var continueDetails = document.getElementById("continueDetails");
+    if (continueDetails) continueDetails.addEventListener("click", function () { showStep(3); });
+    form.addEventListener("click", function (event) {
+      if (event.target.closest("[data-back]")) {
+        setAlert("");
+        showStep(Math.max(1, step - 1));
+      }
+      if (event.target.closest("[data-save-draft]")) writeDraft();
     });
-    document.getElementById("saveDraft").addEventListener("click", writeDraft);
     document.getElementById("resumeDraft").addEventListener("click", function () {
       var saved = readDraft();
       if (saved && saved.data) applyDraft(saved.data);
@@ -371,6 +525,8 @@
     document.getElementById("clearDraft").addEventListener("click", clearDraft);
     var skip = document.getElementById("skipStep");
     if (skip) skip.addEventListener("click", function () { submitIntake(); });
+    var sendWithoutDocuments = document.getElementById("sendWithoutDocuments");
+    if (sendWithoutDocuments) sendWithoutDocuments.addEventListener("click", function () { submitIntake(); });
 
     var saved = readDraft();
     var banner = document.getElementById("draftBanner");
@@ -381,9 +537,16 @@
         if (step !== 1) showStep(1);
         return;
       }
-      var alert = document.getElementById("formAlert");
       setAlert("");
+      var repeats = repeatErrors(form);
+      if (repeats.length) {
+        if (step !== 3) showStep(3);
+        setAlert(repeats.join(" "), "error");
+        return;
+      }
       var body = splitBased(window.ASBS.formData(form));
+      var rows = collectRepeats(form);
+      Object.keys(rows).forEach(function (key) { body[key] = rows[key]; });
       body.consent = body.consent === true;
       body.formStartedAt = formStartedAt;
       if (turnstileRequired && !turnstileToken) {
@@ -417,6 +580,11 @@
 
     form.addEventListener("submit", function (event) {
       event.preventDefault();
+      if (step < 3) {
+        if (step === 1 && !validateStep1()) return;
+        showStep(step + 1);
+        return;
+      }
       submitIntake();
     });
   }
@@ -428,12 +596,20 @@
     var turnstileToken = "";
     var turnstileRequired = false;
     mountTurnstile(document.getElementById("turnstileSlot"), function (token) { turnstileToken = token; }, function (required) { turnstileRequired = required; });
+    bindRepeats(form);
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
       if (!form.reportValidity()) return;
       var alert = document.getElementById("formAlert");
+      var repeats = repeatErrors(form);
+      if (repeats.length) {
+        window.ASBS.showMessage(alert, repeats.join(" "), "error");
+        return;
+      }
       window.ASBS.showMessage(alert, "");
       var body = window.ASBS.formData(form);
+      var rows = collectRepeats(form);
+      Object.keys(rows).forEach(function (key) { body[key] = rows[key]; });
       body.consent = body.consent === true;
       var file = form.querySelector("[name=documentFile]").files[0];
       if (file) {
