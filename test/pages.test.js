@@ -275,6 +275,12 @@ test("public titles and descriptions are unique and within search limits", () =>
     assert.equal(read(file).includes("consult-preview.html"), false, file);
   }
   assert.match(read("intake.html"), /<h1[^>]*>Request a free consultation<\/h1>/);
+  assert.match(read("intake.html"), /Step 1 of 3/);
+  assert.match(read("intake.html"), /id="skipStep"/);
+  assert.match(read("intake.html"), /data-repeat="pastJobs"/);
+  assert.match(read("vendors.html"), /data-repeat="references"/);
+  assert.match(read("vendors.html"), /Permission to contact/);
+  assert.equal(/name="(?:ssn|ein|dob|dateOfBirth)"/i.test(read("intake.html") + read("vendors.html")), false);
   assert.match(read("index.html"), /href="intake\.html"[^>]*>Request a free consultation/);
   assert.equal(read("assets/js/asbs.js").includes("sendBeacon"), false);
   assert.match(read("assets/js/asbs.js"), /credentials:\s*"omit"/);
