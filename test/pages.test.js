@@ -264,6 +264,16 @@ test("public titles and descriptions are unique and within search limits", () =>
     }
   }
   assert.match(read("consult.html"), /<h1>Call or email ASBS<\/h1>/);
+  const preview = read("consult-preview.html");
+  assert.match(preview, /<meta name="robots" content="noindex">/);
+  assert.equal(preview.includes("$"), false);
+  assert.equal(/katy/i.test(preview), false);
+  assert.equal(read("sitemap.xml").includes("consult-preview.html"), false);
+  assert.match(read("robots.txt"), /Disallow: \/consult-preview\.html/);
+  for (const file of htmlFiles) {
+    if (file === "consult-preview.html") continue;
+    assert.equal(read(file).includes("consult-preview.html"), false, file);
+  }
   assert.match(read("intake.html"), /<h1[^>]*>Request a free consultation<\/h1>/);
   assert.match(read("index.html"), /href="intake\.html"[^>]*>Request a free consultation/);
   assert.equal(read("assets/js/asbs.js").includes("sendBeacon"), false);
