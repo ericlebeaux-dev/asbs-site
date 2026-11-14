@@ -494,6 +494,7 @@ function healthFlags(config, mailer) {
   return {
     ok: true,
     mail: mailer?.configured === true,
+    customerConfirmations: mailer?.customerConfirmations === true,
     turnstile: turnstilePublic(config.env).enabled === true,
   };
 }
@@ -512,6 +513,7 @@ function health(config, calendar, mailer, sheets) {
     mail: {
       configured: mailer?.configured === true,
       transport: "gmail_api",
+      customerConfirmations: mailer?.customerConfirmations === true,
     },
     sheets: { configured: sheets?.configured === true },
     payments: {
@@ -1128,7 +1130,7 @@ function submissionTotals(events) {
 function recommendedActions({ leads, calendar, events, config, mailer }) {
   const actions = [];
   if (mailer && mailer.configured === false) {
-    actions.push("Add the Gmail refresh token for americanstandardsolutions@gmail.com so each submission can send a confirmation. Leave the calendar token unchanged.");
+    actions.push("Add the Gmail refresh token for americanstandardsolutions@gmail.com so each submission can alert the ASBS mailbox. Leave the calendar token unchanged.");
   }
   if (!calendar.configured) {
     actions.push("Connect Google Calendar OAuth on the staging server so new bookings are checked against the owner's calendar and written there.");

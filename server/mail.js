@@ -17,11 +17,16 @@ export function notifyAddress(env = process.env) {
   return configured || MAILBOX;
 }
 
+export function customerConfirmationsEnabled(env = process.env) {
+  return String(env.ASBS_CUSTOMER_CONFIRMATIONS || "").trim() === "1";
+}
+
 export function mailerFromEnv(env = process.env, fetchImpl = globalThis.fetch) {
   const clientId = env.GOOGLE_CLIENT_ID || "";
   const clientSecret = env.GOOGLE_CLIENT_SECRET || "";
   const refreshToken = env.GOOGLE_GMAIL_REFRESH_TOKEN || "";
   const owner = notifyAddress(env);
+  const customerConfirmations = customerConfirmationsEnabled(env);
   const configured = Boolean(clientId && clientSecret && refreshToken);
   let cached = null;
 
@@ -61,15 +66,17 @@ export function mailerFromEnv(env = process.env, fetchImpl = globalThis.fetch) {
 
   return {
     configured,
+    customerConfirmations,
     from: MAILBOX,
     owner,
     reason: configured ? null : "Gmail send is not configured.",
     async notify(submission) {
       if (!configured) return { sent: false, reason: "not_configured", customerSent: false, ownerSent: false };
-      const messages = buildMessages(submission, { owner });
+      const ownerOnly = submission.ownerOnly === true || !customerConfirmations;
+      const messages = buildMessages(submission, { owner, customerConfirmations });
       let customerSent = false;
       let ownerSent = false;
-      if (!submission.ownerOnly) {
+      if (!ownerOnly) {
         try {
           await send(messages.customer);
           customerSent = true;
@@ -78,7 +85,7 @@ export function mailerFromEnv(env = process.env, fetchImpl = globalThis.fetch) {
         }
       }
       try {
-        await send(buildMessages(submission, { customerSent, owner }).owner);
+        await send(buildMessages(submission, { customerSent, owner, customerConfirmations: ownerOnly ? customerConfirmations : true }).owner);
         ownerSent = true;
       } catch {
         ownerSent = false;
@@ -87,13 +94,15 @@ export function mailerFromEnv(env = process.env, fetchImpl = globalThis.fetch) {
         sent: customerSent,
         customerSent,
         ownerSent,
-        reason: customerSent ? null : "send_failed",
+        reason: ownerOnly
+          ? (ownerSent ? null : "send_failed")
+          : (customerSent ? null : "send_failed"),
       };
     },
   };
 }
 
-export function buildMessages(submission, { customerSent = true, owner = MAILBOX } = {}) {
+export function buildMessages(submission, { customerSent = true, customerConfirmations = true, owner = MAILBOX } = {}) {
   const kind = KIND_LABEL[submission.kind] || "request";
   const lines = (submission.summaryLines || []).filter(Boolean);
   const customerClosing = submission.kind === "cancel"
@@ -129,7 +138,9 @@ export function buildMessages(submission, { customerSent = true, owner = MAILBOX
     "",
     customerSent
       ? "The visitor confirmation was sent."
-      : "The visitor confirmation could not be sent. The form was still saved.",
+      : customerConfirmations
+        ? "The visitor confirmation could not be sent. The form was still saved."
+        : "Visitor confirmation email is off. The form was still saved.",
   ].join("\n");
   const subjectKind = kind.charAt(0).toUpperCase() + kind.slice(1);
   return {
