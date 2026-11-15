@@ -42,37 +42,103 @@ test("confirmation and owner notice name the request and keep the cancellation c
   assert.match(failed.owner.text, /still saved/);
 });
 
-test("Gmail send posts two messages and a failed send does not throw", async () => {
-  const calls = [];
-  const fetchImpl = async (url, options) => {
-    calls.push({ url, options });
+function gmailFetch(calls, { ok = true } = {}) {
+  return async (url, options) => {
+    calls.push({ url: String(url), options });
     if (String(url).includes("oauth2.googleapis.com")) {
       return { ok: true, json: async () => ({ access_token: "test-token", expires_in: 3600 }) };
     }
-    return { ok: false, json: async () => ({}) };
+    return { ok, json: async () => ({}) };
   };
-  const mailer = mailerFromEnv({
+}
+
+function gmailEnv(extra = {}) {
+  return {
     GOOGLE_CLIENT_ID: "client",
     GOOGLE_CLIENT_SECRET: "secret",
     GOOGLE_GMAIL_REFRESH_TOKEN: "gmail-token",
     GOOGLE_REFRESH_TOKEN: "calendar-token",
-  }, fetchImpl);
+    ...extra,
+  };
+}
+
+function sentMessages(calls) {
+  return calls
+    .filter((call) => call.url.includes("/messages/send"))
+    .map((call) => decode(JSON.parse(call.options.body).raw));
+}
+
+test("the default sends one owner alert and no customer message", async () => {
+  const calls = [];
+  const mailer = mailerFromEnv(gmailEnv(), gmailFetch(calls));
+  assert.equal(mailer.customerConfirmations, false);
+  const result = await mailer.notify({
+    kind: "intake",
+    name: "Test Customer",
+    email: "visitor@example.com",
+    summaryLines: ["Interest: operations"],
+  });
+  assert.equal(result.sent, false);
+  assert.equal(result.customerSent, false);
+  assert.equal(result.ownerSent, true);
+  assert.equal(result.reason, null);
+  const messages = sentMessages(calls);
+  assert.equal(messages.length, 1);
+  assert.match(messages[0], /To: americanstandardsolutions@gmail.com/);
+  assert.doesNotMatch(messages[0], /To: visitor@example.com/);
+  assert.match(messages[0], /Visitor confirmation email is off/);
+  assert.equal(calls.filter((call) => call.url.includes("/messages/send")).length, 1);
+});
+
+test("customer confirmation is sent only when ASBS_CUSTOMER_CONFIRMATIONS is 1", async () => {
+  const calls = [];
+  const mailer = mailerFromEnv(gmailEnv({ ASBS_CUSTOMER_CONFIRMATIONS: "1" }), gmailFetch(calls));
+  assert.equal(mailer.customerConfirmations, true);
   const result = await mailer.notify({
     kind: "contact",
     name: "Test Customer",
     email: "visitor@example.com",
     summaryLines: ["Topic: other", "Message: Hello"],
   });
+  assert.equal(result.customerSent, true);
+  assert.equal(result.ownerSent, true);
+  const messages = sentMessages(calls);
+  assert.equal(messages.length, 2);
+  assert.match(messages[0], /To: visitor@example.com/);
+  assert.match(messages[0], /Eric LeBeaux/);
+  assert.match(messages[1], /To: americanstandardsolutions@gmail.com/);
+  assert.match(messages[1], /The visitor confirmation was sent/);
+  assert.equal(calls[1].options.headers.Authorization, "Bearer test-token");
+
+  const ownerCalls = [];
+  const ownerOnly = mailerFromEnv(gmailEnv({ ASBS_CUSTOMER_CONFIRMATIONS: "1" }), gmailFetch(ownerCalls));
+  const skipped = await ownerOnly.notify({
+    kind: "intake",
+    email: "visitor@example.com",
+    ownerOnly: true,
+    summaryLines: [],
+  });
+  assert.equal(skipped.customerSent, false);
+  assert.equal(skipped.ownerSent, true);
+  assert.equal(sentMessages(ownerCalls).length, 1);
+  assert.match(sentMessages(ownerCalls)[0], /To: americanstandardsolutions@gmail.com/);
+});
+
+test("a failed Gmail send does not throw", async () => {
+  const calls = [];
+  const mailer = mailerFromEnv(gmailEnv(), gmailFetch(calls, { ok: false }));
+  const result = await mailer.notify({
+    kind: "contact",
+    name: "Test Customer",
+    email: "visitor@example.com",
+    summaryLines: ["Topic: other"],
+  });
   assert.equal(result.sent, false);
   assert.equal(result.customerSent, false);
   assert.equal(result.ownerSent, false);
-  assert.equal(calls.length, 3);
-  const raw = JSON.parse(calls[1].options.body).raw;
-  const message = decode(raw);
-  assert.match(message, /From: American Standard Business Solutions <americanstandardsolutions@gmail.com>/);
-  assert.match(message, /To: visitor@example.com/);
-  assert.match(message, /Eric LeBeaux/);
-  assert.equal(calls[1].options.headers.Authorization, "Bearer test-token");
+  assert.equal(result.reason, "send_failed");
+  assert.equal(sentMessages(calls).length, 1);
+  assert.match(sentMessages(calls)[0], /To: americanstandardsolutions@gmail.com/);
 });
 
 test("mail stays off unless the business Gmail refresh token is set", async () => {

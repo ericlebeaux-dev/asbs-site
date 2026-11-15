@@ -20,6 +20,12 @@ const BANNED_KEYS = [
   "ein",
   "taxid",
   "taxpayerid",
+  "employeridentificationnumber",
+  "dob",
+  "dateofbirth",
+  "birthdate",
+  "birthday",
+  "dateborn",
 ];
 
 export const SERVICE_INTERESTS = [
@@ -173,6 +179,154 @@ function assertContracting(levels) {
   return levels;
 }
 
+const ROW_LIMIT = 10;
+
+function cleanLink(value, label) {
+  const text = cleanText(value, 500, { label });
+  if (!text) return "";
+  let url;
+  try {
+    url = new URL(text);
+  } catch {
+    throw httpError(400, `${label} must start with https://.`);
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw httpError(400, `${label} must start with https://.`);
+  }
+  return text;
+}
+
+function cleanRows(value, cleaner) {
+  if (value == null || value === "") return [];
+  if (!Array.isArray(value)) throw httpError(400, "Send each item as its own row.");
+  if (value.length > ROW_LIMIT) throw httpError(400, `Send up to ${ROW_LIMIT} rows.`);
+  return value.map((row) => cleaner(row)).filter(Boolean);
+}
+
+function present(values) {
+  return values.some((value) => String(value || "").trim());
+}
+
+function cleanLicenseRow(row) {
+  if (!row || typeof row !== "object" || Array.isArray(row)) throw httpError(400, "A license row could not be read.");
+  assertNoSensitiveKeys(row);
+  const item = {
+    licenseType: cleanText(row.licenseType, 120),
+    number: cleanText(row.number, 80),
+    issuer: cleanText(row.issuer, 160),
+    scope: cleanText(row.scope, 200),
+    expiry: cleanText(row.expiry, 40),
+    docLink: cleanLink(row.docLink, "License link"),
+  };
+  return present(Object.values(item)) ? item : null;
+}
+
+function cleanInsuranceRow(row) {
+  if (!row || typeof row !== "object" || Array.isArray(row)) throw httpError(400, "An insurance row could not be read.");
+  assertNoSensitiveKeys(row);
+  const item = {
+    coverageType: cleanText(row.coverageType, 120),
+    limits: cleanText(row.limits, 160),
+    carrier: cleanText(row.carrier, 160),
+    expiry: cleanText(row.expiry, 40),
+    coiLink: cleanLink(row.coiLink, "Certificate of insurance link"),
+  };
+  return present(Object.values(item)) ? item : null;
+}
+
+function cleanJobRole(value) {
+  const text = cleanText(value, 20).toLowerCase();
+  if (!text) return "";
+  if (text === "prime" || text === "sub") return text;
+  throw httpError(400, "Role must be prime or sub.");
+}
+
+function cleanJobStatus(value) {
+  const text = cleanText(value, 20).toLowerCase();
+  if (!text) return "";
+  if (text === "completed") return "completed";
+  if (text === "bid-only" || text === "bid only") return "bid-only";
+  throw httpError(400, "Mark the job completed or bid only.");
+}
+
+function cleanJobRow(row) {
+  if (!row || typeof row !== "object" || Array.isArray(row)) throw httpError(400, "A past job row could not be read.");
+  assertNoSensitiveKeys(row);
+  const item = {
+    client: cleanText(row.client, 160),
+    project: cleanText(row.project, 160),
+    scope: cleanText(row.scope, 500),
+    contractValue: cleanText(row.contractValue, 80),
+    start: cleanText(row.start, 40),
+    end: cleanText(row.end, 40),
+    role: cleanJobRole(row.role),
+    referenceId: cleanText(row.referenceId, 80),
+    completed: cleanJobStatus(row.completed),
+  };
+  return present([item.client, item.project, item.scope, item.contractValue, item.start, item.end, item.role, item.referenceId, item.completed]) ? item : null;
+}
+
+function cleanPermission(value, required) {
+  const text = cleanText(value, 8).toLowerCase();
+  if (!text && !required) return "";
+  if (text === "yes" || text === "y") return "yes";
+  if (text === "no" || text === "n") return "no";
+  throw httpError(400, "Choose whether ASBS may contact this reference.", ["Permission to contact"]);
+}
+
+function cleanReferenceRow(row) {
+  if (!row || typeof row !== "object" || Array.isArray(row)) throw httpError(400, "A reference row could not be read.");
+  assertNoSensitiveKeys(row);
+  const item = {
+    name: cleanText(row.name, 120),
+    title: cleanText(row.title, 120),
+    org: cleanText(row.org, 160),
+    contact: cleanText(row.contact, 160),
+    relationship: cleanText(row.relationship, 160),
+  };
+  if (!present(Object.values(item))) return null;
+  item.permission = cleanPermission(row.permission, true);
+  return item;
+}
+
+function cleanResumeRow(row) {
+  if (!row || typeof row !== "object" || Array.isArray(row)) throw httpError(400, "A resume row could not be read.");
+  assertNoSensitiveKeys(row);
+  const item = {
+    person: cleanText(row.person, 120),
+    role: cleanText(row.role, 120),
+    docLink: cleanLink(row.docLink, "Resume link"),
+  };
+  return present(Object.values(item)) ? item : null;
+}
+
+function legacyLicense(value) {
+  const text = cleanText(value, 1000);
+  return text ? [{ licenseType: text, number: "", issuer: "", scope: "", expiry: "", docLink: "" }] : [];
+}
+
+function legacyInsurance(value) {
+  const text = cleanText(value, 1000);
+  return text ? [{ coverageType: text, limits: "", carrier: "", expiry: "", coiLink: "" }] : [];
+}
+
+function legacyJob(value) {
+  const text = cleanText(value, 2000);
+  return text ? [{ client: "", project: "", scope: text, contractValue: "", start: "", end: "", role: "", referenceId: "", completed: "" }] : [];
+}
+
+function documentRows(value, cleaner, legacy) {
+  if (typeof value === "string") return legacy(value);
+  return cleanRows(value, cleaner);
+}
+
+export function cleanDocumentKind(value) {
+  const text = cleanText(value, 20).toLowerCase();
+  if (!text) return "";
+  if (text === "license" || text === "coi" || text === "other") return text;
+  throw httpError(400, "Choose what the uploaded file is.");
+}
+
 export function validateIntake(body) {
   const contact = contactBase(body);
   const contracting = assertContracting(cleanList(
@@ -208,6 +362,13 @@ export function validateIntake(body) {
     leadSource,
     packageId: cleanText(body.packageId, 40),
     notes: cleanText(body.notes, 2000),
+    bonding: cleanText(body.bonding, 500),
+    licenses: documentRows(body.licenses, cleanLicenseRow, legacyLicense),
+    insurance: documentRows(body.insurance, cleanInsuranceRow, legacyInsurance),
+    pastJobs: documentRows(body.pastJobs, cleanJobRow, legacyJob),
+    references: Array.isArray(body.references) ? cleanRows(body.references, cleanReferenceRow) : [],
+    referencesNote: typeof body.references === "string" ? cleanText(body.references, 1000) : "",
+    resumes: cleanRows(body.resumes, cleanResumeRow),
   };
 }
 
@@ -229,10 +390,14 @@ export function validateVendor(body) {
     registrations: cleanText(body.registrations, 1000),
     equipment: cleanText(body.equipment, 1000),
     experience: cleanText(body.experience, 2000),
-    references: cleanText(body.references, 1000),
-    insurance: cleanText(body.insurance, 1000),
     bonding: cleanText(body.bonding, 500),
-    licenses: cleanText(body.licenses, 1000),
+    licenses: documentRows(body.licenses, cleanLicenseRow, legacyLicense),
+    insurance: documentRows(body.insurance, cleanInsuranceRow, legacyInsurance),
+    pastJobs: documentRows(body.pastJobs || body.experience, cleanJobRow, legacyJob),
+    references: Array.isArray(body.references) ? cleanRows(body.references, cleanReferenceRow) : [],
+    referencesNote: typeof body.references === "string" ? cleanText(body.references, 1000) : "",
+    resumes: cleanRows(body.resumes, cleanResumeRow),
+    documentKind: cleanDocumentKind(body.documentKind),
     teamingInterest: cleanChoice(body.teamingInterest, ["yes", "no", "later"], "Teaming interest", { required: true }),
     notes: cleanText(body.notes, 2000),
     consent: true,

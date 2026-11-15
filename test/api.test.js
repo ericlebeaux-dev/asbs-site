@@ -122,12 +122,14 @@ test("health, packages, and static protections", async () => {
     assert.equal(health.data.bookingHorizonDays, 365);
     assert.equal(health.data.mail.configured, false);
     assert.equal(health.data.mail.from, undefined);
+    assert.equal(health.data.mail.customerConfirmations, false);
     assert.equal(JSON.stringify(health.data).includes("americanstandardsolutions@gmail.com"), false);
     assert.equal(health.data.mail.transport, "gmail_api");
     const healthz = await api(ctx.base, "GET", "/healthz");
     assert.equal(healthz.status, 200);
     assert.equal(healthz.data.ok, true);
     assert.equal(healthz.data.mail, false);
+    assert.equal(healthz.data.customerConfirmations, false);
     assert.equal(JSON.stringify(healthz.data).includes("@"), false);
 
     const home = await fetch(ctx.base + "/");
@@ -138,6 +140,23 @@ test("health, packages, and static protections", async () => {
     assert.equal((await fetch(ctx.base + "/.env")).status, 404);
     assert.equal((await fetch(ctx.base + "/assets/../../server/app.js")).status, 404);
     assert.equal((await api(ctx.base, "GET", "/api/dashboard")).status, 401);
+  } finally {
+    await ctx.stop();
+  }
+});
+
+test("health can report customer confirmations without an address", async () => {
+  const ctx = await start({ env: { ASBS_CUSTOMER_CONFIRMATIONS: "1" } });
+  try {
+    const health = await api(ctx.base, "GET", "/api/health");
+    assert.equal(health.data.mail.customerConfirmations, true);
+    assert.equal(health.data.mail.configured, false);
+    assert.equal(health.data.mail.from, undefined);
+    const healthz = await api(ctx.base, "GET", "/healthz");
+    assert.equal(healthz.data.customerConfirmations, true);
+    assert.equal(healthz.data.mail, false);
+    assert.equal(JSON.stringify(health.data).includes("@"), false);
+    assert.equal(JSON.stringify(healthz.data).includes("@"), false);
   } finally {
     await ctx.stop();
   }
