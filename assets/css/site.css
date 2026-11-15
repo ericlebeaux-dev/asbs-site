@@ -140,6 +140,27 @@ a:hover { text-decoration: none; }
   color: var(--asbs-accent);
 }
 
+@media (max-width: 440px) {
+  .header-inner { gap: 0.35rem; }
+  .brand { gap: 0.4rem; flex: 0 0 auto; }
+  .brand img { width: 2.25rem; height: 2.25rem; flex-shrink: 0; }
+  .brand span {
+    font-size: 0.74rem;
+    line-height: 1.05;
+    white-space: nowrap;
+  }
+  .brand small {
+    font-size: 0.56rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .header-call {
+    flex: 0 0 auto;
+    font-size: 0.75rem;
+  }
+  .nav-toggle { flex: 0 0 auto; }
+}
+
 .desktop-nav,
 .mobile-nav {
   display: flex;
