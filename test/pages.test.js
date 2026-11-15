@@ -266,6 +266,7 @@ test("public titles and descriptions are unique and within search limits", () =>
   assert.match(read("consult.html"), /<h1>Call or email ASBS<\/h1>/);
   const preview = read("consult-preview.html");
   assert.match(preview, /<meta name="robots" content="noindex">/);
+  assert.equal((preview.match(/book a slot/gi) || []).length, 1);
   assert.equal(preview.includes("$"), false);
   assert.equal(/katy/i.test(preview), false);
   assert.equal(read("sitemap.xml").includes("consult-preview.html"), false);

@@ -935,10 +935,17 @@ function documentSummary(fields) {
 
 async function recordSheets(sheets, profile) {
   try {
-    if (!sheets || typeof sheets.appendProfile !== "function") return { written: false };
+    if (!sheets || typeof sheets.appendProfile !== "function") {
+      console.log(JSON.stringify({ event: "sheets", written: false, reason: "not_configured" }));
+      return { written: false };
+    }
     const result = await sheets.appendProfile(profile);
+    if (result?.written !== true) {
+      console.log(JSON.stringify({ event: "sheets", written: false, reason: result?.reason || "skipped" }));
+    }
     return { written: result?.written === true };
   } catch {
+    console.log(JSON.stringify({ event: "sheets", written: false, reason: "append_failed" }));
     return { written: false };
   }
 }
@@ -946,11 +953,21 @@ async function recordSheets(sheets, profile) {
 async function confirm(mailer, submission) {
   try {
     if (!mailer || typeof mailer.notify !== "function") {
+      console.log(JSON.stringify({ event: "mail", customerSent: false, ownerSent: false, reason: "not_configured" }));
       return { sent: false, customerSent: false, ownerSent: false, reason: "not_configured" };
     }
-    const result = await mailer.notify(submission);
-    return result || { sent: false, customerSent: false, ownerSent: false, reason: "send_failed" };
+    const result = await mailer.notify(submission) || { sent: false, customerSent: false, ownerSent: false, reason: "send_failed" };
+    if (result.reason === "not_configured" || result.customerSent !== true || result.ownerSent !== true) {
+      console.log(JSON.stringify({
+        event: "mail",
+        customerSent: result.customerSent === true,
+        ownerSent: result.ownerSent === true,
+        reason: result.reason || null,
+      }));
+    }
+    return result;
   } catch {
+    console.log(JSON.stringify({ event: "mail", customerSent: false, ownerSent: false, reason: "send_failed" }));
     return { sent: false, customerSent: false, ownerSent: false, reason: "send_failed" };
   }
 }

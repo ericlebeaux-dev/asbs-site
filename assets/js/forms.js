@@ -546,7 +546,9 @@
       }
       var body = splitBased(window.ASBS.formData(form));
       var rows = collectRepeats(form);
-      Object.keys(rows).forEach(function (key) { body[key] = rows[key]; });
+      Object.keys(rows).forEach(function (key) {
+        if (rows[key].length) body[key] = rows[key];
+      });
       body.consent = body.consent === true;
       body.formStartedAt = formStartedAt;
       if (turnstileRequired && !turnstileToken) {
@@ -609,7 +611,9 @@
       window.ASBS.showMessage(alert, "");
       var body = window.ASBS.formData(form);
       var rows = collectRepeats(form);
-      Object.keys(rows).forEach(function (key) { body[key] = rows[key]; });
+      Object.keys(rows).forEach(function (key) {
+        if (rows[key].length) body[key] = rows[key];
+      });
       body.consent = body.consent === true;
       var file = form.querySelector("[name=documentFile]").files[0];
       if (file) {
