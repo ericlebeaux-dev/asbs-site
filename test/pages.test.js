@@ -141,7 +141,9 @@ test("consultation page asks visitors to contact ASBS instead of picking a slot"
 });
 
 test("dashboard is not indexed and client code has no secrets", () => {
-  assert.match(read("dashboard.html"), /noindex/);
+  assert.equal(fs.existsSync(path.join(root, "dashboard.html")), false);
+  assert.equal(fs.existsSync(path.join(root, "command.html")), false);
+  assert.match(fs.readFileSync(path.join(root, "_private/dashboard.html"), "utf8"), /noindex/);
   assert.match(read("robots.txt"), /Disallow: \/dashboard\.html/);
   const client = htmlFiles.map(read).join("\n") + fs.readdirSync(path.join(root, "assets/js")).map((file) => fs.readFileSync(path.join(root, "assets/js", file), "utf8")).join("\n");
   assert.equal(/ya29\./.test(client), false);
@@ -151,21 +153,18 @@ test("dashboard is not indexed and client code has no secrets", () => {
 });
 
 test("HubSpot tracking is on public pages and off the private dashboards", () => {
-  const snippet = '<script type="text/javascript" id="hs-script-loader" async defer src="//js-na2.hs-scripts.com/247883336.js"></script>';
-  const privatePages = new Set(["command.html", "dashboard.html"]);
+  const loader = fs.readFileSync(path.join(root, "assets/js/asbs.js"), "utf8");
+  assert.match(loader, /hs-script-loader/);
+  assert.match(loader, /scheduleHubSpot/);
+  assert.match(loader, /window\.addEventListener\("load"/);
   for (const file of htmlFiles) {
     const html = read(file);
-    const at = html.lastIndexOf(snippet);
-    if (privatePages.has(file)) {
-      assert.equal(at, -1, file);
-      assert.equal(html.includes("hs-scripts.com"), false, file);
-      assert.equal(html.includes("247883336"), false, file);
-      continue;
-    }
-    const body = html.lastIndexOf("</body>");
-    assert.notEqual(at, -1, file);
-    assert.equal(at < body, true, file);
-    assert.equal(html.slice(at + snippet.length, body).trim(), "", `${file} snippet is not the last node before </body>`);
+    assert.equal(html.includes("hs-scripts.com"), false, file);
+  }
+  for (const file of ["_private/dashboard.html", "_private/command.html"]) {
+    const html = fs.readFileSync(path.join(root, file), "utf8");
+    assert.equal(html.includes("hs-scripts.com"), false, file);
+    assert.equal(html.includes("247883336"), false, file);
   }
   for (const file of ["contact.html", "intake.html"]) {
     const html = read(file);
@@ -196,7 +195,7 @@ test("public pages and client scripts do not name Katy", () => {
 
 test("sitemap lists the public pages and skips the dashboard", () => {
   const sitemap = read("sitemap.xml");
-  for (const file of ["dashboard.html", "packages.html", "command.html", "thanks.html"]) {
+  for (const file of ["packages.html", "thanks.html"]) {
     assert.equal(sitemap.includes(file), false, file);
   }
   for (const file of ["services.html", "consult.html", "codes.html", "intake.html", "vendors.html", "about.html", "contact.html"]) {
@@ -217,15 +216,17 @@ test("November 10 quick fixes stay within the approved scope", () => {
   assert.equal(read("index.html").includes("streetAddress"), false);
   assert.equal(read("index.html").includes("postalCode"), false);
   assert.equal(fs.existsSync(path.join(root, "favicon.ico")), true);
-  for (const file of ["command.html", "thanks.html", "packages.html"]) {
+  for (const file of ["thanks.html", "packages.html"]) {
     assert.match(read(file), /noindex, nofollow/);
   }
+  assert.match(fs.readFileSync(path.join(root, "_private/command.html"), "utf8"), /noindex, nofollow/);
   const marketing = htmlFiles.filter((file) => file !== "command.html" && file !== "dashboard.html");
   for (const file of marketing) {
     const html = read(file);
     const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
     assert.equal(header.includes("Approach"), false, file);
-    assert.match(header, /href="intake\.html"[^>]*>Start free consultation/, file);
+    assert.match(header, /href="intake\.html"[^>]*>Request a free consultation/, file);
+    assert.match(header, /class="header-call" href="tel:\+12819545167"/, file);
     assert.match(html, /Monday–Friday, 8:00 a\.m\.–5:00 p\.m\. Central Time/, file);
     assert.match(html, /\(281\) 954-5167/, file);
     assert.match(html, /property="og:title"/, file);

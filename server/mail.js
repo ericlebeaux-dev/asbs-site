@@ -12,10 +12,16 @@ const KIND_LABEL = {
   cancel: "consultation cancellation",
 };
 
+export function notifyAddress(env = process.env) {
+  const configured = String(env.ASBS_NOTIFY_EMAIL || "").trim();
+  return configured || MAILBOX;
+}
+
 export function mailerFromEnv(env = process.env, fetchImpl = globalThis.fetch) {
   const clientId = env.GOOGLE_CLIENT_ID || "";
   const clientSecret = env.GOOGLE_CLIENT_SECRET || "";
   const refreshToken = env.GOOGLE_GMAIL_REFRESH_TOKEN || "";
+  const owner = notifyAddress(env);
   const configured = Boolean(clientId && clientSecret && refreshToken);
   let cached = null;
 
@@ -56,20 +62,23 @@ export function mailerFromEnv(env = process.env, fetchImpl = globalThis.fetch) {
   return {
     configured,
     from: MAILBOX,
+    owner,
     reason: configured ? null : "Gmail send is not configured.",
     async notify(submission) {
       if (!configured) return { sent: false, reason: "not_configured", customerSent: false, ownerSent: false };
-      const messages = buildMessages(submission);
+      const messages = buildMessages(submission, { owner });
       let customerSent = false;
       let ownerSent = false;
-      try {
-        await send(messages.customer);
-        customerSent = true;
-      } catch {
-        customerSent = false;
+      if (!submission.ownerOnly) {
+        try {
+          await send(messages.customer);
+          customerSent = true;
+        } catch {
+          customerSent = false;
+        }
       }
       try {
-        await send(buildMessages(submission, { customerSent }).owner);
+        await send(buildMessages(submission, { customerSent, owner }).owner);
         ownerSent = true;
       } catch {
         ownerSent = false;
@@ -84,7 +93,7 @@ export function mailerFromEnv(env = process.env, fetchImpl = globalThis.fetch) {
   };
 }
 
-export function buildMessages(submission, { customerSent = true } = {}) {
+export function buildMessages(submission, { customerSent = true, owner = MAILBOX } = {}) {
   const kind = KIND_LABEL[submission.kind] || "request";
   const lines = (submission.summaryLines || []).filter(Boolean);
   const customerClosing = submission.kind === "cancel"
@@ -130,8 +139,8 @@ export function buildMessages(submission, { customerSent = true } = {}) {
       text: customerText,
     },
     owner: {
-      to: MAILBOX,
-      subject: `ASBS website submission: ${subjectKind}`,
+      to: owner,
+      subject: submission.ownerSubject || `ASBS website submission: ${subjectKind}`,
       text: ownerText,
     },
   };

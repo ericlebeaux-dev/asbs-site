@@ -39,7 +39,7 @@ function storeFor(ctx) {
 function serviceFor(ctx) {
   const settings = docsSettings(ctx.config.env);
   const store = storeFor(ctx);
-  if (!store || (!settings.ready && !ctx.docsStore)) return null;
+  if (!settings.pageEnabled || !store || (!settings.ready && !ctx.docsStore)) return null;
   return {
     settings,
     service: createDocsService({
@@ -65,7 +65,7 @@ async function noteHubSpot(ctx, result) {
 
 export function serveDocsPage(req, res, ctx) {
   const settings = docsSettings(ctx.config.env);
-  if (!settings.ready && !ctx.docsStore) {
+  if (!settings.pageEnabled || (!settings.ready && !ctx.docsStore)) {
     send(res, 404, { message: "That address was not found." });
     return;
   }

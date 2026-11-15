@@ -135,6 +135,27 @@
     return data;
   }
 
+  function loadHubSpot() {
+    if (document.getElementById("hs-script-loader")) return;
+    var script = document.createElement("script");
+    script.id = "hs-script-loader";
+    script.async = true;
+    script.src = "https://js-na2.hs-scripts.com/247883336.js";
+    document.body.appendChild(script);
+  }
+
+  function scheduleHubSpot() {
+    var started = false;
+    function start() {
+      if (started) return;
+      started = true;
+      loadHubSpot();
+    }
+    window.addEventListener("load", function () { window.setTimeout(start, 1); });
+    window.addEventListener("pointerdown", start, { once: true, passive: true });
+    window.addEventListener("keydown", start, { once: true });
+  }
+
   function init() {
     var button = document.querySelector("[data-menu-button]");
     var menu = document.querySelector("[data-mobile-menu]");
@@ -151,6 +172,7 @@
     });
     if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
     track("page_view");
+    scheduleHubSpot();
     var measurementId = cfg.gaMeasurementId || "";
     if (/^G-[A-Z0-9]+$/.test(measurementId)) {
       var script = document.createElement("script");

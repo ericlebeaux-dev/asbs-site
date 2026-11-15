@@ -7,10 +7,10 @@ export function pocPage() {
 <meta name="robots" content="noindex, nofollow">
 <title>Document check | ASBS</title>
 <style>
-  :root { color-scheme: light; --navy:#102033; --ivory:#f6f3ec; --paper:#fffdf8; --gold:#7a5a16; --ink:#1c2430; --line:#ddd6c8; }
+  :root { color-scheme: light; --navy:#322e2a; --ivory:#f6f3ec; --paper:#fffdf8; --gold:#7a5610; --ink:#322e2a; --line:#ddd6c8; }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--ivory); color:var(--ink); font:1.05rem/1.5 "Segoe UI", system-ui, sans-serif; }
-  a { color:#0d5c66; }
+  a { color:#7a5610; }
   .skip { position:absolute; left:.75rem; top:.75rem; transform:translateY(-150%); background:#fff; color:var(--navy); padding:.6rem .9rem; }
   .skip:focus { transform:none; }
   header, main, footer { width:min(42rem, calc(100% - 2rem)); margin-inline:auto; }
@@ -29,7 +29,7 @@ export function pocPage() {
   .status.error { background:#fde8e4; color:#6d2018; }
   .status.ok { background:#e7f2f3; color:var(--navy); }
   .hp { position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); }
-  :focus-visible { outline:3px solid #0d5c66; outline-offset:3px; }
+  :focus-visible { outline:3px solid #5c4308; outline-offset:3px; }
   @media (prefers-reduced-motion: reduce) { * { scroll-behavior:auto; transition:none; } }
 </style>
 </head>
