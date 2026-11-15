@@ -47,7 +47,7 @@
       <p class="eyebrow">Partners</p>
       <h1>Share capabilities with ASBS</h1>
       <p class="narrow">Specialists and suppliers can send a private capability note. ASBS may use it when a consulting client needs a human introduction. This page is not an automated matching service. Registering does not guarantee subcontracting work, a teaming agreement, or a contract award.</p>
-      <p class="narrow">If you upload a W-9, certificate of insurance, or license, redact any Social Security number first. PDF, PNG, or JPEG, up to 4 MB. ASBS does not ask for passwords or bank account numbers.</p>
+      <p class="narrow">If you upload a W-9, certificate of insurance, or license, redact any Social Security number, employer identification number, or date of birth first. PDF, PNG, or JPEG, up to 4 MB. ASBS does not ask for passwords or bank account numbers.</p>
     </div>
   </section>
   <section class="section">
@@ -65,18 +65,202 @@
         <label>Certifications<textarea name="certifications" rows="2"></textarea></label>
         <label>Registrations<textarea name="registrations" rows="2"></textarea></label>
         <label>Equipment and operational capacity<textarea name="equipment" rows="2"></textarea></label>
-        <label>Relevant experience<textarea name="experience" rows="3"></textarea></label>
-        <label>References<textarea name="references" rows="2"></textarea></label>
-        <label>Insurance<textarea name="insurance" rows="2"></textarea></label>
-        <label>Bonding<input name="bonding"></label>
-        <label>Licenses<textarea name="licenses" rows="2"></textarea></label>
+<fieldset class="repeat-set full" data-repeat="licenses" data-label="License" data-max="8">
+              <legend>Licenses <span class="opt">Optional</span></legend>
+              <p class="field-help">Add a row for each license. A link is enough.</p>
+              <div class="repeat-rows" data-rows>
+                <div class="repeat-row" data-row>
+                  <p class="repeat-label" data-row-label>License 1</p>
+                  <label>License type <span class="opt">Optional</span><input data-field="licenseType" maxlength="120" autocomplete="off"></label>
+                  <label>Number <span class="opt">Optional</span><input data-field="number" maxlength="80" autocomplete="off"></label>
+                  <label>Issuer <span class="opt">Optional</span><input data-field="issuer" maxlength="160" autocomplete="off"></label>
+                  <label>Class or scope <span class="opt">Optional</span><input data-field="scope" maxlength="200" autocomplete="off"></label>
+                  <label>Expiry <span class="opt">Optional</span><input data-field="expiry" type="date" autocomplete="off"></label>
+                  <label>Document link <span class="opt">Optional</span><input data-field="docLink" data-link="url" type="url" inputmode="url" maxlength="500" placeholder="https://" autocomplete="off"></label>
+                  <div class="repeat-actions"><button type="button" class="button secondary" data-remove>Remove</button></div>
+                </div>
+              </div>
+              <template>
+                <div class="repeat-row" data-row>
+                  <p class="repeat-label" data-row-label>License</p>
+                  <label>License type <span class="opt">Optional</span><input data-field="licenseType" maxlength="120" autocomplete="off"></label>
+                  <label>Number <span class="opt">Optional</span><input data-field="number" maxlength="80" autocomplete="off"></label>
+                  <label>Issuer <span class="opt">Optional</span><input data-field="issuer" maxlength="160" autocomplete="off"></label>
+                  <label>Class or scope <span class="opt">Optional</span><input data-field="scope" maxlength="200" autocomplete="off"></label>
+                  <label>Expiry <span class="opt">Optional</span><input data-field="expiry" type="date" autocomplete="off"></label>
+                  <label>Document link <span class="opt">Optional</span><input data-field="docLink" data-link="url" type="url" inputmode="url" maxlength="500" placeholder="https://" autocomplete="off"></label>
+                  <div class="repeat-actions"><button type="button" class="button secondary" data-remove>Remove</button></div>
+                </div>
+              </template>
+              <p class="sr-only" data-repeat-status aria-live="polite"></p>
+              <button type="button" class="button secondary" data-add>Add a license</button>
+            </fieldset>
+            <fieldset class="repeat-set full" data-repeat="insurance" data-label="Insurance" data-max="8">
+              <legend>Insurance <span class="opt">Optional</span></legend>
+              <p class="field-help">Add a row for each policy. A link to the certificate is enough.</p>
+              <div class="repeat-rows" data-rows>
+                <div class="repeat-row" data-row>
+                  <p class="repeat-label" data-row-label>Insurance 1</p>
+                  <label>Coverage type <span class="opt">Optional</span><input data-field="coverageType" maxlength="120" autocomplete="off"></label>
+                  <label>Limits <span class="opt">Optional</span><input data-field="limits" maxlength="160" autocomplete="off"></label>
+                  <label>Carrier <span class="opt">Optional</span><input data-field="carrier" maxlength="160" autocomplete="off"></label>
+                  <label>Expiry <span class="opt">Optional</span><input data-field="expiry" type="date" autocomplete="off"></label>
+                  <label class="span-2">Certificate link <span class="opt">Optional</span><input data-field="coiLink" data-link="url" type="url" inputmode="url" maxlength="500" placeholder="https://" autocomplete="off"></label>
+                  <div class="repeat-actions"><button type="button" class="button secondary" data-remove>Remove</button></div>
+                </div>
+              </div>
+              <template>
+                <div class="repeat-row" data-row>
+                  <p class="repeat-label" data-row-label>Insurance</p>
+                  <label>Coverage type <span class="opt">Optional</span><input data-field="coverageType" maxlength="120" autocomplete="off"></label>
+                  <label>Limits <span class="opt">Optional</span><input data-field="limits" maxlength="160" autocomplete="off"></label>
+                  <label>Carrier <span class="opt">Optional</span><input data-field="carrier" maxlength="160" autocomplete="off"></label>
+                  <label>Expiry <span class="opt">Optional</span><input data-field="expiry" type="date" autocomplete="off"></label>
+                  <label class="span-2">Certificate link <span class="opt">Optional</span><input data-field="coiLink" data-link="url" type="url" inputmode="url" maxlength="500" placeholder="https://" autocomplete="off"></label>
+                  <div class="repeat-actions"><button type="button" class="button secondary" data-remove>Remove</button></div>
+                </div>
+              </template>
+              <p class="sr-only" data-repeat-status aria-live="polite"></p>
+              <button type="button" class="button secondary" data-add>Add insurance</button>
+            </fieldset>
+            <label class="full">Bonding <span class="opt">Optional</span><input name="bonding" maxlength="500" autocomplete="off"></label>
+            <fieldset class="repeat-set full" data-repeat="pastJobs" data-label="Past job" data-max="8">
+              <legend>Past jobs <span class="opt">Optional</span></legend>
+              <p class="field-help">Add a row for each job. Include the value and dates when you have them.</p>
+              <div class="repeat-rows" data-rows>
+                <div class="repeat-row" data-row>
+                  <p class="repeat-label" data-row-label>Past job 1</p>
+                  <label>Client or agency <span class="opt">Optional</span><input data-field="client" maxlength="160" autocomplete="off"></label>
+                  <label>Project <span class="opt">Optional</span><input data-field="project" maxlength="160" autocomplete="off"></label>
+                  <label class="span-2">Scope <span class="opt">Optional</span><textarea data-field="scope" rows="2" maxlength="500"></textarea></label>
+                  <label>Contract value <span class="opt">Optional</span><input data-field="contractValue" maxlength="80" autocomplete="off"></label>
+                  <label>Reference id <span class="opt">Optional</span><input data-field="referenceId" maxlength="80" autocomplete="off"></label>
+                  <label>Start <span class="opt">Optional</span><input data-field="start" type="date" autocomplete="off"></label>
+                  <label>End <span class="opt">Optional</span><input data-field="end" type="date" autocomplete="off"></label>
+                  <label>Role <span class="opt">Optional</span>
+                    <select data-field="role">
+                      <option value="">Select if you know</option>
+                      <option value="prime">Prime</option>
+                      <option value="sub">Sub</option>
+                    </select>
+                  </label>
+                  <label>Completed or bid only <span class="opt">Optional</span>
+                    <select data-field="completed">
+                      <option value="">Select if you know</option>
+                      <option value="completed">Completed</option>
+                      <option value="bid-only">Bid only</option>
+                    </select>
+                  </label>
+                  <div class="repeat-actions"><button type="button" class="button secondary" data-remove>Remove</button></div>
+                </div>
+              </div>
+              <template>
+                <div class="repeat-row" data-row>
+                  <p class="repeat-label" data-row-label>Past job</p>
+                  <label>Client or agency <span class="opt">Optional</span><input data-field="client" maxlength="160" autocomplete="off"></label>
+                  <label>Project <span class="opt">Optional</span><input data-field="project" maxlength="160" autocomplete="off"></label>
+                  <label class="span-2">Scope <span class="opt">Optional</span><textarea data-field="scope" rows="2" maxlength="500"></textarea></label>
+                  <label>Contract value <span class="opt">Optional</span><input data-field="contractValue" maxlength="80" autocomplete="off"></label>
+                  <label>Reference id <span class="opt">Optional</span><input data-field="referenceId" maxlength="80" autocomplete="off"></label>
+                  <label>Start <span class="opt">Optional</span><input data-field="start" type="date" autocomplete="off"></label>
+                  <label>End <span class="opt">Optional</span><input data-field="end" type="date" autocomplete="off"></label>
+                  <label>Role <span class="opt">Optional</span>
+                    <select data-field="role">
+                      <option value="">Select if you know</option>
+                      <option value="prime">Prime</option>
+                      <option value="sub">Sub</option>
+                    </select>
+                  </label>
+                  <label>Completed or bid only <span class="opt">Optional</span>
+                    <select data-field="completed">
+                      <option value="">Select if you know</option>
+                      <option value="completed">Completed</option>
+                      <option value="bid-only">Bid only</option>
+                    </select>
+                  </label>
+                  <div class="repeat-actions"><button type="button" class="button secondary" data-remove>Remove</button></div>
+                </div>
+              </template>
+              <p class="sr-only" data-repeat-status aria-live="polite"></p>
+              <button type="button" class="button secondary" data-add>Add a past job</button>
+            </fieldset>
+            <fieldset class="repeat-set full" data-repeat="references" data-label="Reference" data-max="8">
+              <legend>References <span class="opt">Optional</span></legend>
+              <p class="field-help">If you add a reference, choose whether ASBS may contact that person.</p>
+              <div class="repeat-rows" data-rows>
+                <div class="repeat-row" data-row>
+                  <p class="repeat-label" data-row-label>Reference 1</p>
+                  <label>Name <span class="opt">Optional</span><input data-field="name" maxlength="120" autocomplete="name"></label>
+                  <label>Title <span class="opt">Optional</span><input data-field="title" maxlength="120" autocomplete="organization-title"></label>
+                  <label>Organization <span class="opt">Optional</span><input data-field="org" maxlength="160" autocomplete="organization"></label>
+                  <label>Phone or email <span class="opt">Optional</span><input data-field="contact" maxlength="160" autocomplete="off"></label>
+                  <label class="span-2">Relationship <span class="opt">Optional</span><input data-field="relationship" maxlength="160" autocomplete="off"></label>
+                  <fieldset class="permission span-2">
+                    <legend>Permission to contact</legend>
+                    <label class="consent"><input type="radio" data-field="permission" value="yes"> Yes</label>
+                    <label class="consent"><input type="radio" data-field="permission" value="no"> No</label>
+                  </fieldset>
+                  <div class="repeat-actions"><button type="button" class="button secondary" data-remove>Remove</button></div>
+                </div>
+              </div>
+              <template>
+                <div class="repeat-row" data-row>
+                  <p class="repeat-label" data-row-label>Reference</p>
+                  <label>Name <span class="opt">Optional</span><input data-field="name" maxlength="120" autocomplete="name"></label>
+                  <label>Title <span class="opt">Optional</span><input data-field="title" maxlength="120" autocomplete="organization-title"></label>
+                  <label>Organization <span class="opt">Optional</span><input data-field="org" maxlength="160" autocomplete="organization"></label>
+                  <label>Phone or email <span class="opt">Optional</span><input data-field="contact" maxlength="160" autocomplete="off"></label>
+                  <label class="span-2">Relationship <span class="opt">Optional</span><input data-field="relationship" maxlength="160" autocomplete="off"></label>
+                  <fieldset class="permission span-2">
+                    <legend>Permission to contact</legend>
+                    <label class="consent"><input type="radio" data-field="permission" value="yes"> Yes</label>
+                    <label class="consent"><input type="radio" data-field="permission" value="no"> No</label>
+                  </fieldset>
+                  <div class="repeat-actions"><button type="button" class="button secondary" data-remove>Remove</button></div>
+                </div>
+              </template>
+              <p class="sr-only" data-repeat-status aria-live="polite"></p>
+              <button type="button" class="button secondary" data-add>Add a reference</button>
+            </fieldset>
+            <fieldset class="repeat-set full" data-repeat="resumes" data-label="Resume" data-max="8">
+              <legend>Resumes <span class="opt">Optional</span></legend>
+              <p class="field-help">A link the person already has is enough. This page does not upload a file.</p>
+              <div class="repeat-rows" data-rows>
+                <div class="repeat-row" data-row>
+                  <p class="repeat-label" data-row-label>Resume 1</p>
+                  <label>Person <span class="opt">Optional</span><input data-field="person" maxlength="120" autocomplete="name"></label>
+                  <label>Role or title <span class="opt">Optional</span><input data-field="role" maxlength="120" autocomplete="organization-title"></label>
+                  <label class="span-2">Document link <span class="opt">Optional</span><input data-field="docLink" data-link="url" type="url" inputmode="url" maxlength="500" placeholder="https://" autocomplete="off"></label>
+                  <div class="repeat-actions"><button type="button" class="button secondary" data-remove>Remove</button></div>
+                </div>
+              </div>
+              <template>
+                <div class="repeat-row" data-row>
+                  <p class="repeat-label" data-row-label>Resume</p>
+                  <label>Person <span class="opt">Optional</span><input data-field="person" maxlength="120" autocomplete="name"></label>
+                  <label>Role or title <span class="opt">Optional</span><input data-field="role" maxlength="120" autocomplete="organization-title"></label>
+                  <label class="span-2">Document link <span class="opt">Optional</span><input data-field="docLink" data-link="url" type="url" inputmode="url" maxlength="500" placeholder="https://" autocomplete="off"></label>
+                  <div class="repeat-actions"><button type="button" class="button secondary" data-remove>Remove</button></div>
+                </div>
+              </template>
+              <p class="sr-only" data-repeat-status aria-live="polite"></p>
+              <button type="button" class="button secondary" data-add>Add a resume</button>
+            </fieldset>
         <fieldset>
           <legend>Interest in future teaming opportunities *</legend>
           <label class="consent"><input type="radio" name="teamingInterest" value="yes" required> Yes</label>
           <label class="consent"><input type="radio" name="teamingInterest" value="later"> Maybe later</label>
           <label class="consent"><input type="radio" name="teamingInterest" value="no"> No</label>
         </fieldset>
-        <label>Optional supporting document<input type="file" name="documentFile" accept="application/pdf,image/png,image/jpeg"></label>
+        <label>What is the optional file?
+          <select name="documentKind">
+            <option value="">Select if you upload a file</option>
+            <option value="license">License</option>
+            <option value="coi">Certificate of insurance</option>
+            <option value="other">Something else</option>
+          </select>
+        </label>
+        <label>Optional license or certificate of insurance<input type="file" name="documentFile" accept="application/pdf,image/png,image/jpeg"></label>
         <label>Notes<textarea name="notes" rows="2"></textarea></label>
         <label class="consent"><input type="checkbox" name="consent" required> I agree ASBS may store this registration privately and contact me. I understand it does not promise work.</label>
         <div class="hp-field" aria-hidden="true"><label>Company URL<input name="company_url" tabindex="-1" autocomplete="off"></label></div>
